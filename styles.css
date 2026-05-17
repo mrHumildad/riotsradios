@@ -1,0 +1,1061 @@
+/* =========================================================
+   ONLYPUNK RADIO — Post-Punk / 80s Radio Chassis System
+   Aesthetic: Factory dashboard + CRT terminal + VU meters
+   ========================================================= */
+
+/* ---------- Reset & Tokens ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --amber:        #e8a000;
+  --amber-bright: #ffc107;
+  --amber-dim:    #7a5000;
+  --amber-glow:   rgba(232,160,0,.25);
+  --amber-glow-sm:rgba(232,160,0,.08);
+  --cyan:         #00d2e0;
+  --cyan-dim:     #006060;
+  --red-live:     #ff2e2e;
+  --red-dim:      #5c1515;
+  --green-active: #00ff64;
+  --green-dim:    #0d3d1d;
+  --off-white:    #e8e4db;
+  --warm-gray:    #7a7468;
+  --chassis-dark: #0a0a0a;
+  --panel-dark:   #111110;
+  --panel-mid:    #1b1b17;
+  --panel-light:  #24241e;
+  --panel-hi:     #2e2e26;
+  --border-warm:  #3a3a2e;
+  --font-stencil: "Courier New", Courier, monospace;
+  --font-display: "Impact", "Arial Black", sans-serif;
+  --screw:        #2a2a24;
+
+  /* VU meter fills */
+  --vu-bg:   #0d0800;
+  --vu-fill: #c8800000;
+}
+
+html {
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-stencil);
+  background-color: var(--chassis-dark);
+  color: var(--off-white);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  /* industrial texture */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,255,255,.008) 3px,
+      rgba(255,255,255,.008) 4px
+    );
+}
+
+/* Gritty vignette overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 30%,
+    transparent 55%,
+    rgba(0,0,0,.65) 100%
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ---------- Root Layout ---------- */
+#root {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.container {
+  min-height: 100dvh;
+  padding: 10px 6px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =========================================================
+   SECTION 1 — CHASSIS HEADER
+   ========================================================= */
+
+.chassis-header {
+  background: linear-gradient(
+    180deg,
+    var(--panel-hi) 0%,
+    var(--panel-dark) 30%,
+    var(--chassis-dark) 100%
+  );
+  width: 100%;
+  border: 1px solid var(--border-warm);
+  border-top: 4px solid var(--amber-dim);
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* Screws in corners */
+.chassis-header::before,
+.chassis-header::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 6px solid var(--panel-mid);
+  border-right-color: var(--screw);
+  border-left-color: var(--screw);
+}
+.chassis-header::before {
+  top: 8px;
+  left: 8px;
+}
+.chassis-header::after {
+  top: 8px;
+  right: 8px;
+  transform: rotate(-90deg);
+}
+
+/* Also replicate at bottom via extra nodes */
+
+.header-model {
+  font-family: var(--font-stencil);
+  font-size: 0.60rem;
+  font-weight: 400;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header-spacer {
+  flex: 1 1 auto;
+}
+
+.chassis-pill {
+  border: 1px solid var(--border-warm);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-family: var(--font-stencil);
+  font-size: 0.58rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.power-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber), 0 0 18px var(--amber-glow);
+  animation: led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--amber), 0 0 14px var(--amber-glow); }
+  50%       { opacity: .55; box-shadow: 0 0 4px var(--amber-dim); }
+}
+
+/* =========================================================
+   SECTION 2 — PLAYER DASHBOARD ("chassis unit")
+   ========================================================= */
+
+.player-dashboard {
+  background: linear-gradient(
+    175deg,
+    var(--panel-mid) 0%,
+    var(--panel-dark) 40%,
+    #0c0b09 100%
+  );
+  border: 1px solid var(--border-warm);
+  padding: 16px 14px;
+  box-shadow:
+    0 10px 36px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.03),
+    inset 0 -1px 0 rgba(0,0,0,.6);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Corner screws */
+.corner-screw {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 5px solid var(--panel-light);
+  border-right-color: var(--screw);
+  border-left-color: var(--screw);
+}
+.corner-screw.tl { top: 5px; left: 5px; }
+.corner-screw.tr { top: 5px; right: 5px; transform: rotate(-90deg); }
+.corner-screw.bl { bottom: 5px; left: 5px; transform: rotate(90deg); }
+.corner-screw.br { bottom: 5px; right: 5px; transform: rotate(180deg); }
+
+/* ---------- CRT AMBER DISPLAY ---------- */
+.crt-display {
+  background: var(--vu-bg);
+  border: 2px solid #3a2000;
+  border-radius: 4px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 3px 10px rgba(0,0,0,.95),
+    inset 0 0 40px rgba(232,160,0,.03),
+    0 0 4px var(--amber-dim);
+}
+
+/* scanlines */
+.crt-display::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,.35) 2px,
+    rgba(0,0,0,.35) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* subtle phosphor bloom glow */
+.crt-display::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(232,160,0,.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+#current-station,
+.display-text {
+  font-family: var(--font-stencil);
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-shadow:
+    0 0 6px var(--amber),
+    0 0 22px var(--amber-glow-sm),
+    0 0 50px rgba(232,160,0,.06);
+  text-align: center;
+  position: relative;
+  z-index: 5;
+  line-height: 1.6;
+  animation: phosphor-flicker 7s 1s infinite;
+}
+
+@keyframes phosphor-flicker {
+  0%,91%,100% { opacity: 1; }
+  93% { opacity: .35; }
+  95% { opacity: .85; }
+  97% { opacity: .5; }
+}
+
+/* ---------- RETRO SOUND BAR / EQ VISUALIZER ---------- */
+/* 90s Winamp / Sony CD-player spectrum analyzer style  */
+.soundbar-module {
+  background: var(--vu-bg);
+  border: 1px solid #2a1a00;
+  border-radius: 4px;
+  padding: 8px 8px 6px;
+  box-shadow:
+    inset 0 2px 10px rgba(0,0,0,.95),
+    inset 0 0 30px rgba(232,160,0,.02),
+    0 0 4px var(--amber-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* glass reflection overlay */
+.soundbar-module::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,.03) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255,255,255,.01) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* scanline overlay for CRT feel */
+.soundbar-module::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,.25) 2px,
+    rgba(0,0,0,.25) 3px
+  );
+  pointer-events: none;
+  z-index: 11;
+}
+
+.soundbar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 5;
+  padding: 0 2px;
+}
+
+.soundbar-label {
+  font-size: 0.5rem;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  font-weight: 400;
+}
+
+.soundbar-mode {
+  font-size: 0.5rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: #1a1a14;
+  border: 1px solid var(--border-warm);
+  color: var(--amber-dim);
+  transition: color .3s ease, border-color .3s ease, text-shadow .3s ease;
+}
+
+.soundbar-mode:not(:contains("STANDBY")) {
+  /* will be overridden by is-active */
+}
+
+.soundbar-bars.is-active .soundbar-mode,
+.soundbar-module:has(.is-active) .soundbar-mode {
+  color: var(--green-active);
+  border-color: #005530;
+  text-shadow: 0 0 6px var(--green-active);
+}
+
+.soundbar-vol {
+  font-size: 0.5rem;
+  letter-spacing: .2em;
+  color: var(--amber-dim);
+  font-weight: 400;
+}
+
+.soundbar-scale {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 5;
+  padding: 0 2px;
+}
+
+.scale-tick {
+  font-size: 0.4rem;
+  letter-spacing: .1em;
+  color: #3a2200;
+  font-weight: 400;
+}
+
+/* ── the bars grid ── */
+.soundbar-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2px;
+  height: clamp(100px, 28vh, 200px);
+  position: relative;
+  z-index: 5;
+  padding: 4px 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent calc(100% / 12 - 1px),
+      rgba(58,34,0,.15) calc(100% / 12 - 1px),
+      rgba(58,34,0,.15) calc(100% / 12)
+    );
+}
+
+/* each individual bar column */
+.sound-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1px;
+  height: 100%;
+}
+
+/* individual segment (LED cell) */
+.bar-seg {
+  flex: 1 1 0;
+  min-height: 0;
+  border-radius: 0;
+  transition: background .08s ease, box-shadow .08s ease;
+}
+
+/* off state */
+.bar-seg.seg-off {
+  background: #0a0500;
+  box-shadow: inset 0 0 1px rgba(58,34,0,.3);
+}
+
+/* lit states — retro green-to-red gradient like 90s EQ */
+.bar-seg.seg-base {
+  background: #00c840;
+  box-shadow: 0 0 3px rgba(0,200,64,.5);
+}
+.bar-seg.seg-mid {
+  background: #80d000;
+  box-shadow: 0 0 3px rgba(128,208,0,.5);
+}
+.bar-seg.seg-warm {
+  background: #e8a000;
+  box-shadow: 0 0 4px rgba(232,160,0,.5);
+}
+.bar-seg.seg-hot {
+  background: #ff2e2e;
+  box-shadow: 0 0 5px rgba(255,46,46,.7);
+}
+
+/* ── peak hold dots ── */
+.soundbar-bars.is-active .bar-seg.seg-hot {
+  animation: peak-glow .15s ease-in-out infinite alternate;
+}
+
+@keyframes peak-glow {
+  0%   { filter: brightness(.8); }
+  100% { filter: brightness(1.3); }
+}
+
+/* ── frequency labels ── */
+.soundbar-footer {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 5;
+  padding: 0 2px;
+}
+
+.freq-band {
+  font-size: 0.4rem;
+  letter-spacing: .1em;
+  color: #3a2200;
+  font-weight: 400;
+}
+
+/* ---------- SINGLE CONTROL ROW (play + stop + volume) ---------- */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden; /* prevent button row from wrapping on very small screens */
+}
+
+.ctrl-left {
+  flex: 1 1 0;
+  min-width: 48px;
+}
+
+/*** Physical push-button controls — cassette-deck keys ***/
+.push-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-appearance: none;
+  position: relative;
+  outline: none;
+  transition: none;
+
+  /* deck-key square */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0 8px;
+
+  /* 3D face plate */
+  background: linear-gradient(
+    to bottom,
+    var(--amber-bright) 0%,
+    var(--amber)        50%,
+    #9a6000           100%
+  );
+  box-shadow:
+    0 5px 0 #6a3e00,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+}
+
+.push-btn::after {
+  /* top-specular highlight — inset from button edges */
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,.22) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.push-btn svg {
+  position: relative;
+  z-index: 2;
+}
+
+.push-btn:focus-visible {
+  outline: 2px solid var(--amber-bright);
+  outline-offset: 3px;
+}
+
+.push-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #6a3e00,
+    0 3px 5px rgba(0,0,0,.6),
+    inset 0 1px 3px rgba(0,0,0,.35);
+}
+
+/* Play / Pause button — green face */
+.push-btn.play-btn[disabled],
+.push-btn.play-btn.is-playing {
+  background: linear-gradient(
+    to bottom,
+    #20ff80 0%,
+    var(--green-active) 50%,
+    #00964c 100%
+  );
+  box-shadow:
+    0 5px 0 #005530,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+  color: #001a08;
+}
+
+/* Stop button — red face */
+.push-btn.stop-btn {
+  background: linear-gradient(
+    to bottom,
+    #ff6060 0%,
+    var(--red-live)        50%,
+    #a01010               100%
+  );
+  box-shadow:
+    0 5px 0 #640808,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+  color: #080606;
+}
+
+/* ---------- VOLUME RAIL (embedded in ctrl-row) ---------- */
+.vol-rail {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--vu-bg);
+  border: 1px solid var(--border-warm);
+  border-radius: 4px;
+  padding: 5px 9px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.75);
+}
+
+.vol-icon {
+  flex-shrink: 0;
+  font-size: 0.88rem;
+  color: var(--amber-dim);
+  line-height: 1;
+}
+
+.vol-pct {
+  flex-shrink: 0;
+  font-family: var(--font-stencil);
+  font-size: 0.62rem;
+  min-width: 32px;
+  text-align: right;
+  color: var(--amber-dim);
+  letter-spacing: .05em;
+}
+
+input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--vu-bg);
+  border: 1px solid var(--border-warm);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.8);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--amber-bright) 0%,
+    var(--amber)        60%,
+    #7a5000           100%
+  );
+  border: 2px solid var(--amber-dim);
+  box-shadow: 0 0 8px var(--amber-glow), 0 2px 6px rgba(0,0,0,.7);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--amber-bright) 0%,
+    var(--amber)        60%,
+    #7a5000           100%
+  );
+  border: 2px solid var(--amber-dim);
+  box-shadow: 0 0 8px var(--amber-glow), 0 2px 6px rgba(0,0,0,.7);
+  cursor: pointer;
+}
+
+/* Remove default Firefox track styling inconsistencies */
+input[type="range"]::-moz-range-track {
+  background: var(--vu-bg);
+  border: 1px solid var(--border-warm);
+  border-radius: 3px;
+}
+
+/* ---------- Panel Divider Lines ---------- */
+.panel-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border-warm) 15%,
+    var(--amber-dim)   50%,
+    var(--border-warm) 85%,
+    transparent 100%
+  );
+  opacity: .55;
+}
+
+/* =========================================================
+   SECTION 3 — STATION LIST  ("channel list")
+   ========================================================= */
+
+/* header bar above list */
+.station-section-label {
+  font-size: 0.58rem;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  text-align: center;
+  padding: 10px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.station-section-label::before,
+.station-section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-warm));
+}
+.station-section-label::after {
+  background: linear-gradient(90deg, var(--border-warm), transparent);
+}
+
+.station-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* fixed-height scrolling panel derived from viewport + free space already taken by header/dashboard/footer */
+  height: min(56vh, calc(100dvh - 370px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: 4px;
+
+  /* ── Custom scrollbar ──────────────────────────── */
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-dim) var(--panel-mid);
+}
+
+/* WebKit / Blink (Chrome, Safari, Edge) */
+.station-list::-webkit-scrollbar {
+  width: 5px;
+}
+.station-list::-webkit-scrollbar-track {
+  background: var(--panel-mid);
+  border-radius: 4px;
+}
+.station-list::-webkit-scrollbar-thumb {
+  background: var(--amber-dim);
+  border-radius: 4px;
+  box-shadow: 0 0 4px var(--amber-glow-sm);
+}
+.station-list::-webkit-scrollbar-thumb:hover {
+  background: var(--amber);
+}
+
+/**** STATION ITEM — the "rear channel row" ****/
+.station-item {
+  background: var(--panel-dark);
+  border: 1px solid var(--border-warm);
+  border-left: 4px solid var(--amber-dim);
+  display: grid;
+  grid-template-columns: 34px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 13px;
+  min-height: 54px;
+  cursor: pointer;
+  position: relative;
+  transition: background .12s ease, border-color .12s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,.5);
+  overflow: hidden;
+}
+
+.station-item::after {
+  /* active signal scanline */
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(232,160,0,.04),
+    transparent
+  );
+  animation: scan-line 2.5s linear infinite;
+  pointer-events: none;
+  opacity: 0;
+}
+.station-item.playing::after { opacity: 1; }
+
+@keyframes scan-line {
+  0%  { top: -30%; }
+  100%{ top: 130%; }
+}
+
+.station-item:hover {
+  background: var(--panel-light);
+  border-left-color: var(--amber);
+}
+
+.station-item.playing {
+  border-left-color: var(--green-active);
+  background: linear-gradient(
+    90deg,
+    rgba(0,255,100,.05) 0%,
+    var(--panel-dark) 40%
+  );
+  box-shadow:
+    0 0 10px var(--amber-glow-sm),
+    0 1px 0 rgba(0,0,0,.5);
+}
+
+/* Stencil channel number */
+.station-num {
+  font-family: var(--font-stencil);
+  font-size: 0.60rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: var(--amber-dim);
+  width: 22px;
+  transition: color .15s ease;
+}
+
+.station-item.playing .station-num {
+  color: var(--green-active);
+  text-shadow: 0 0 7px var(--green-active);
+}
+
+/* Station info */
+.station-info {
+  min-width: 0;
+}
+
+.station-name-line {
+  font-family: var(--font-stencil);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--off-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.45;
+}
+
+.station-location-line {
+  font-size: 0.65rem;
+  color: var(--warm-gray);
+  letter-spacing: .08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
+/* Station body — icon + name+location, stacked, in middle column */
+.station-body {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+/* right-side action strip: WEB button + play arrow */
+.station-aside {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+/* Station icon — restore original style */
+.station-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  border: 1px solid var(--border-warm);
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Play indicator */
+.play-ind {
+  font-size: 0.75rem;
+  color: var(--amber-dim);
+  flex-shrink: 0;
+  align-self: center;
+  transition: color .2s ease;
+  width: 20px;
+  text-align: right;
+}
+
+.station-item.playing .play-ind {
+  color: var(--green-active);
+  text-shadow: 0 0 6px var(--green-active);
+  animation: eq-blink .85s ease-in-out infinite alternate;
+}
+
+@keyframes eq-blink {
+  0%   { text-shadow: 0 0 5px  var(--green-active); }
+  50%  { text-shadow: 0 0 12px var(--green-active), 0 0 22px rgba(0,255,100,.5); }
+  100% { text-shadow: 0 0 6px  var(--green-active); }
+}
+
+/* playing marker line at very right */
+.station-item.playing::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--green-active);
+  box-shadow: 0 0 8px var(--green-active);
+}
+
+.station-item:hover::before {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* homepage link inline */
+.homepage-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.57rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  background: transparent;
+  border: 1px solid var(--amber-dim);
+  padding: 2px 8px;
+  border-radius: 2px;
+  text-decoration: none;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-left: 4px;
+  transition: color .12s ease, border-color .12s ease;
+  line-height: 1.6;
+}
+
+.homepage-btn:hover {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+
+/* =========================================================
+   SECTION 4 — FOOTER STATUS
+   ========================================================= */
+.chassis-footer {
+  background: var(--panel-dark);
+  border: 1px solid var(--border-warm);
+  border-top: 3px solid var(--border-warm);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+}
+
+.footer-sig {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-logo {
+  font-family: "Impact", "Arial Black", sans-serif;
+  color: var(--amber-dim);
+  letter-spacing: .15em;
+  font-size: 0.52rem;
+}
+
+/* =========================================================
+   SECTION 5 — RESPONSIVE BREAKPOINTS (mobile-first).
+   We only go UP. Never shrink stylesheets.
+   ========================================================= */
+
+@media (min-width: 390px) {
+  .container { padding: 0 10px 40px; }
+  .player-dashboard { padding: 18px 16px; }
+  .station-name-line { font-size: 0.83rem; }
+}
+
+@media (min-width: 480px) {
+  .container { padding: 0 18px 48px; }
+
+  .vu-col { min-width: 16px; }
+
+  #current-station,
+  .display-text {
+    font-size: 1rem;
+    letter-spacing: .18em;
+  }
+
+  .station-item { padding: 11px 14px; }
+  .station-icon { width: 34px; height: 34px; }
+}
+
+@media (min-width: 768px) {
+  #root { max-width: 600px; }
+
+  .player-dashboard {
+    border-radius: 0;
+    border-left-color: var(--amber-dim);
+    border-right-color: var(--amber-dim);
+  }
+
+  .vu-col { min-width: 20px; }
+
+  .station-item { padding: 12px 16px; }
+
+  .footer-sig { font-size: 0.62rem; }
+}
+
+/* =========================================================
+   GLOBAL ANIMATION UTILS
+   ========================================================= */
+
+/* Screen flicker — rare and subtle */
+@keyframes screen-flicker {
+  0%,100% { opacity: 1; }
+  50.5%  { opacity: .97; }
+  50.7%  { opacity: 1; }
+  75%    { opacity: .98; }
+}
+
+.player-dashboard {
+  animation: screen-flicker 18s 1 step-start infinite;
+}
+
+/* ---- Dev strip border labels (de-coded style) ---- */
+.rear-label {
+  position: absolute;
+  font-size: 0.46rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  opacity: .35;
+  pointer-events: none;
+}
