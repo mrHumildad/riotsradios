@@ -7,7 +7,8 @@ export const stations = [
     url: "https://radiobot.radioslibres.info/listen/contrabanda_fm/radio.mp3",
     icon: "https://www.contrabanda.org/favicon.ico",
     description: "",
-    epg: ""
+    epg: "", 
+    mailto: "contrabanda@contrabanda.org"
   },
   {
     id: 2,
@@ -74,7 +75,7 @@ export const stations = [
     name: "Radiofabrik",
     location: "Salzburg, Austria",
     webpage: "https://radiofabrik.at/",
-    url: "http://stream.radiofabrik.at:8000/rf_low.mp3",
+    url: "http://stream.radiofabrik.at/rf_low.mp3",
     icon: "https://radiofabrik.at/wp-content/themes/radiofabrik/images/rf_button.svg",
     description: "",
     epg: ""

@@ -579,6 +579,21 @@ body::after {
     inset 0 1px 3px rgba(0,0,0,.35);
 }
 
+/* Transport row — groups prev / play / next into a tight stack */
+.transport-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Skip / prev-next buttons — slightly smaller than play, same amber look */
+.push-btn.skip-btn {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 6px;
+}
+
 /* Play / Pause button — green face */
 .push-btn.play-btn[disabled],
 .push-btn.play-btn.is-playing {
@@ -596,20 +611,12 @@ body::after {
   color: #001a08;
 }
 
-/* Stop button — red face */
-.push-btn.stop-btn {
-  background: linear-gradient(
-    to bottom,
-    #ff6060 0%,
-    var(--red-live)        50%,
-    #a01010               100%
-  );
-  box-shadow:
-    0 5px 0 #640808,
-    0 8px 10px rgba(0,0,0,.7),
-    inset 0 1px 0 rgba(255,255,255,.35),
-    inset 0 -2px 0 rgba(0,0,0,.25);
-  color: #080606;
+/*---------- disabled state ----------*/
+.push-btn:disabled,
+.push-btn:disabled:hover {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ---------- VOLUME RAIL (embedded in ctrl-row) ---------- */
@@ -992,7 +999,406 @@ input[type="range"]::-moz-range-track {
 }
 
 /* =========================================================
-   SECTION 5 — RESPONSIVE BREAKPOINTS (mobile-first).
+   SECTION 5 — EPG (Electronic Program Guide)
+   ========================================================= */
+
+/* EPG badge pill in station-aside */
+.epg-badge {
+  font-family: var(--font-stencil);
+  font-size: 0.48rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: rgba(232,160,0,.1);
+  border: 1px solid var(--amber-dim);
+  padding: 1px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+/* Station name / show name alternation container */
+.station-name-container {
+  min-height: 1.45em;
+  overflow: hidden;
+  position: relative;
+}
+
+.station-name-container .station-name-line,
+.station-name-container .station-show-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.45;
+}
+
+/* Show title text that alternates with station name */
+.station-show-text {
+  font-family: var(--font-stencil);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: .04em;
+  color: var(--amber);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.station-show-text.is-live {
+  color: var(--red-live);
+  text-shadow: 0 0 6px rgba(255,46,46,.4);
+}
+
+/* Live dot indicator */
+.epg-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red-live);
+  box-shadow: 0 0 5px var(--red-live), 0 0 10px rgba(255,46,46,.4);
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+  animation: epg-live-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes epg-live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--red-live), 0 0 10px rgba(255,46,46,.4); }
+  50%      { opacity: .5; box-shadow: 0 0 3px var(--red-live); }
+}
+
+/* Off-air dot (non-live shows) */
+.epg-off-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber-dim);
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* =========================================================
+   SECTION 5b — EPG MODAL
+   ========================================================= */
+
+.epg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.epg-modal {
+  background: var(--panel-dark);
+  border: 1px solid var(--border-warm);
+  width: 100%;
+  max-width: 480px;
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.epg-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-warm);
+  flex-shrink: 0;
+}
+
+.epg-modal-station {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.epg-modal-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1px solid var(--border-warm);
+  flex-shrink: 0;
+}
+
+.epg-modal-name {
+  font-family: var(--font-stencil);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--off-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epg-modal-close {
+  font-family: var(--font-stencil);
+  font-size: 1rem;
+  color: var(--warm-gray);
+  background: transparent;
+  border: 1px solid var(--border-warm);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .12s ease, border-color .12s ease;
+}
+
+.epg-modal-close:hover {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+
+.epg-modal-day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-warm);
+  flex-shrink: 0;
+}
+
+.epg-day-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.7rem;
+  color: var(--amber-dim);
+  background: transparent;
+  border: 1px solid var(--border-warm);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .12s ease, border-color .12s ease;
+}
+
+.epg-day-btn:hover:not(:disabled) {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+
+.epg-day-btn:disabled {
+  opacity: .25;
+  cursor: not-allowed;
+}
+
+.epg-day-label {
+  font-family: var(--font-stencil);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  min-width: 80px;
+  text-align: center;
+}
+
+.epg-today-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 14px 6px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: color .12s ease;
+}
+
+.epg-today-btn:hover {
+  color: var(--amber);
+}
+
+.epg-schedule {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 10px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-dim) var(--panel-mid);
+}
+
+.epg-schedule::-webkit-scrollbar { width: 5px; }
+.epg-schedule::-webkit-scrollbar-track { background: var(--panel-mid); }
+.epg-schedule::-webkit-scrollbar-thumb { background: var(--amber-dim); border-radius: 4px; }
+
+.epg-prog {
+  display: grid;
+  grid-template-columns: 56px minmax(0,1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(58,58,46,.3);
+  transition: background .12s ease;
+}
+
+.epg-prog:last-child {
+  border-bottom: none;
+}
+
+.epg-prog.is-current {
+  background: rgba(232,160,0,.06);
+  border-left: 3px solid var(--amber);
+  padding-left: 3px;
+}
+
+.epg-prog.is-past {
+  opacity: .4;
+}
+
+.epg-prog-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.epg-start {
+  font-family: var(--font-stencil);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--off-white);
+  letter-spacing: .04em;
+}
+
+.epg-duration {
+  font-family: var(--font-stencil);
+  font-size: 0.5rem;
+  color: var(--warm-gray);
+  letter-spacing: .05em;
+}
+
+.epg-prog-body {
+  min-width: 0;
+}
+
+.epg-prog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.epg-prog-live {
+  font-family: var(--font-stencil);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: var(--red-live);
+  flex-shrink: 0;
+  animation: epg-modal-live-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes epg-modal-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .5; }
+}
+
+.epg-prog-title {
+  font-family: var(--font-stencil);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--off-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: .03em;
+}
+
+.epg-prog.is-current .epg-prog-title {
+  color: var(--amber);
+}
+
+.epg-prog-cat {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  color: var(--warm-gray);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.epg-prog-link {
+  font-size: 0.75rem;
+  color: var(--amber-dim);
+  text-decoration: none;
+  flex-shrink: 0;
+  align-self: center;
+  transition: color .12s ease;
+}
+
+.epg-prog-link:hover {
+  color: var(--amber);
+}
+
+.epg-no-data {
+  font-family: var(--font-stencil);
+  font-size: 0.68rem;
+  color: var(--warm-gray);
+  text-align: center;
+  padding: 30px 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* Make EPG badge in station list a button */
+.epg-badge-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.48rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: rgba(232,160,0,.1);
+  border: 1px solid var(--amber-dim);
+  padding: 1px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
+}
+
+.epg-badge-btn:hover {
+  color: var(--amber-bright);
+  border-color: var(--amber);
+  background: rgba(232,160,0,.2);
+}
+
+.epg-prog.is-gap {
+  opacity: .55;
+}
+
+.epg-prog.is-gap .epg-prog-title {
+  font-style: italic;
+  color: var(--warm-gray);
+}
+
+/* =========================================================
+   SECTION 6 — RESPONSIVE BREAKPOINTS (mobile-first).
    We only go UP. Never shrink stylesheets.
    ========================================================= */
 
@@ -1034,7 +1440,7 @@ input[type="range"]::-moz-range-track {
 }
 
 /* =========================================================
-   GLOBAL ANIMATION UTILS
+   SECTION 7 — GLOBAL ANIMATION UTILS
    ========================================================= */
 
 /* Screen flicker — rare and subtle */

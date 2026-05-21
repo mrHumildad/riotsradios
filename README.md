@@ -75,4 +75,4 @@ npm run deploy
 
 ## License
 
-IMABIRL(Invite me a beer in real life)
+MIUC(Me Invitarás Una Cerveza)
