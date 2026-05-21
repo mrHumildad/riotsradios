@@ -1,6 +1,7 @@
 import React from 'react'
 import StationItem from './StationItem'
-function StationList({ stations, currentStationIndex, onSelectStation }) {
+
+function StationList({ stations, currentStationIndex, onSelectStation, epgData, currentShows, onOpenEpg }) {
   return (
     <div className="station-list">
       {stations.map((station, index) => (
@@ -10,6 +11,9 @@ function StationList({ stations, currentStationIndex, onSelectStation }) {
           index={index}
           isPlaying={currentStationIndex === index}
           onSelect={onSelectStation}
+          hasEpg={epgData.has(station.id)}
+          currentShow={currentShows.get(station.id) || null}
+          onOpenEpg={onOpenEpg}
         />
       ))}
     </div>

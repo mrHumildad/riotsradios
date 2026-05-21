@@ -1,0 +1,197 @@
+{
+  "station_id": 1,
+  "schedule_type": "weekly",
+  "timezone": "Europe/Madrid",
+  "days": [
+    {
+      "day": "monday",
+      "label": "lunes",
+      "programs": [
+        {
+          "start": "00:00",
+          "title": "Nikosia",
+          "category": "contrabanda",
+          "duration_blocks": 4,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/nikosia/"
+        },
+        {
+          "start": "02:00",
+          "title": "Música",
+          "category": "musica",
+          "duration_blocks": 1,
+          "live": false
+        },
+        {
+          "start": "02:30",
+          "title": "Flamenco d’aquí i d’allà",
+          "category": "contrabanda",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/flamenco-daqui-i-dalla/"
+        },
+        {
+          "start": "04:00",
+          "title": "El Canto de la Tripulación",
+          "category": "podcast",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/el-canto-de-la-tripulacion/"
+        },
+        {
+          "start": "05:30",
+          "title": "De Raíz",
+          "category": "podcast",
+          "duration_blocks": 4,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/de-raiz/"
+        },
+        {
+          "start": "08:00",
+          "title": "Zibaldone",
+          "category": "contrabanda",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/zibaldone/"
+        },
+        {
+          "start": "09:30",
+          "title": "Mar de fueguitos",
+          "category": "podcast",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/mar-de-fueguitos/"
+        },
+        {
+          "start": "11:00",
+          "title": "Deskarrilats",
+          "category": "contrabanda",
+          "duration_blocks": 3,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/4564/"
+        },
+        {
+          "start": "13:00",
+          "title": "Niemandsland",
+          "category": "contrabanda",
+          "duration_blocks": 4,
+          "live": true,
+          "url": "https://www.contrabanda.org/programa/niemandsland/"
+        },
+        {
+          "start": "15:30",
+          "title": "Especiales Contrabanda FM",
+          "category": "contrabanda",
+          "duration_blocks": 4,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/especials-contrabanda-fm/"
+        },
+        {
+          "start": "18:00",
+          "title": "Radio Rosko",
+          "category": "contrabanda",
+          "duration_blocks": 3,
+          "live": true,
+          "url": "https://www.contrabanda.org/programa/radiorosko/"
+        },
+        {
+          "start": "19:30",
+          "title": "MIAU!",
+          "category": "contrabanda",
+          "duration_blocks": 2,
+          "live": true,
+          "url": "https://www.contrabanda.org/programa/miau/"
+        },
+        {
+          "start": "21:00",
+          "title": "El Acratador",
+          "category": "podcast",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/el-acratador/"
+        },
+        {
+          "start": "22:30",
+          "title": "SHIT",
+          "category": "podcast",
+          "duration_blocks": 2,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/shit/"
+        }
+      ]
+    },
+    {
+      "day": "tuesday",
+      "label": "martes",
+      "programs": [
+        {
+          "start": "00:00",
+          "title": "Skarlata Ojara*",
+          "category": "contrabanda",
+          "duration_blocks": 2,
+          "live": false,
+          "frequency": "biweekly",
+          "url": "https://www.contrabanda.org/programa/skarlataojara/"
+        },
+        {
+          "start": "01:30",
+          "title": "Les Vallkyries",
+          "category": "podcast",
+          "duration_blocks": 4,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/les-vallkyries/"
+        },
+        {
+          "start": "04:00",
+          "title": "Sin Audiencia",
+          "category": "contrabanda",
+          "duration_blocks": 5,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/sinaudiencia/"
+        },
+        {
+          "start": "07:00",
+          "title": "Sobrevivir al Descalabro",
+          "category": "podcast",
+          "duration_blocks": 4,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/sobrevivir-al-descalabro/"
+        },
+        {
+          "start": "11:30",
+          "title": "La Disidencia",
+          "category": "podcast",
+          "duration_blocks": 3,
+          "live": false,
+          "url": "https://www.contrabanda.org/programa/la-disidencia/"
+        },
+        {
+          "start": "18:30",
+          "title": "Humanoides Asociados",
+          "category": "contrabanda",
+          "duration_blocks": 3,
+          "live": true,
+          "url": "https://www.contrabanda.org/programa/humanoides-asociados/"
+        },
+        {
+          "start": "21:00",
+          "title": "Distrito Apache",
+          "category": "contrabanda",
+          "duration_blocks": 3,
+          "live": true,
+          "url": "https://www.contrabanda.org/programa/distritoapache/"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "block_unit_minutes": 30,
+    "categories": {
+      "musica": "Music",
+      "podcast": "Podcast",
+      "contrabanda": "Rebroadcast",
+      "directe": "Live"
+    },
+    "source_format": "HTML schedule grid"
+  }
+}
