@@ -38,10 +38,42 @@ function App() {
   return (
     <div className="container">
 
-      <div className="chassis-header">
-        <span className="header-model">ONLYPUNKS Radio</span>
-        <span className="header-spacer" aria-hidden="true" />
-      </div>
+      <header className="chassis-header">
+        <a
+          className="header-logo-link"
+          href="https://github.com/mrhumildad/builtin"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="ONLYPUNKS repository"
+        >
+          <span className="header-logo" aria-hidden="true" />
+        </a>
+
+        <h1 className="header-brand">
+          <span className="header-brand-r">R</span>
+          <span className="header-brand-i">I</span>
+          <span className="header-brand-o">O</span>
+          <span className="header-brand-t">T</span>
+          <span className="header-brand-s">S</span>
+          <span className="header-brand-blink" aria-hidden="true">/</span>
+          <span className="header-brand-r2">R</span>
+          <span className="header-brand-a">a</span>
+          <span className="header-brand-d">d</span>
+          <span className="header-brand-i2">I</span>
+          <span className="header-brand-o2">O</span>
+          <span className="header-brand-s2">S</span>
+        </h1>
+
+        <button
+          className="header-menu-btn"
+          aria-label="Menu"
+          type="button"
+        >
+          <span className="header-menu-icon" aria-hidden="true" />
+          <span className="header-menu-icon" aria-hidden="true" />
+          <span className="header-menu-icon" aria-hidden="true" />
+        </button>
+      </header>
 
       <PlayerDashboard
         audioRef={audioRef}
