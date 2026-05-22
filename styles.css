@@ -414,7 +414,10 @@ body::after {
   background: var(--vu-bg);
   border: 2px solid #3a2000;
   border-radius: 4px;
-  padding: 12px 14px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  height: 100%;
   position: relative;
   overflow: hidden;
   box-shadow:
@@ -690,6 +693,7 @@ body::after {
   overflow: hidden;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   flex-wrap: nowrap;
   overflow: hidden; /* prevent button row from wrapping on very small screens */
@@ -816,7 +820,9 @@ body::after {
   display: flex;
   align-items: center;
   gap: 5px;
-  flex: 1 1 0;
+  flex: 0 1 auto;
+  width: 220px;
+  max-width: 30%;
   min-width: 0;
   background: var(--vu-bg);
   border: 1px solid var(--border-warm);

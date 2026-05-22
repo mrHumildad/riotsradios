@@ -163,7 +163,6 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
       <div className="panel-divider" />
 
       <div className="ctrl-row">
-        <div className="ctrl-left" />
         <div className="ctrl-left">
           <div className="transport-btns">
 
@@ -221,7 +220,6 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
           />
         </div>
 
-        <div className="ctrl-left" />
       </div>
 
     </div>
