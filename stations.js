@@ -15,7 +15,7 @@ export const stations = [
     name: "Radio Arrebato",
     location: "Guadalajara, Spain",
     webpage: "https://www.radioarrebato.net/",
-    url: "http://srv0510.emisorasonline.com:8025/stream",
+    url: "https://radioarrebato-seo.nabario.deno.net/api/live8",
     icon: "https://pbs.twimg.com/profile_images/1972705258380959744/pczIzr5G_400x400.jpg",
     description: "",
     epg: ""
@@ -25,7 +25,7 @@ export const stations = [
     name: "Radio Caroline",
     location: "United Kingdom",
     webpage: "https://www.radiocaroline.co.uk/#home.html",
-    url: "http://sc6.radiocaroline.net:8040/;",
+    url: "http://sc6.radiocaroline.net:8040/",
     icon: "https://www.radio.net/175/carolineinternational.png?version=e6efa3da5668fd004163801d934235246ca1c111",
     description: "",
     epg: ""
@@ -148,7 +148,8 @@ export const stations = [
     url: "http://kehuelga.net:8000/radio.mp3",
     icon: "https://upload.wikimedia.org/wikipedia/commons/7/79/Ke_Huelga_Radio.png",
     description: "",
-    epg: ""
+    epg: "",
+    mailto: "kehuelga@kehuelga.net"
   },
   {
     id: 16,
