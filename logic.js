@@ -86,12 +86,6 @@ export function useRadioLogic() {
     epgData.forEach((epg, stationId) => {
       const show = getCurrentShow(epg)
       shows.set(stationId, show)
-      if (stationId === 1) {
-        const tz = epg.timezone || 'UTC'
-        const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'long' }).format(new Date())
-        console.log(`[EPG] Station 1 — current time (${tz}): ${timeStr}`)
-        console.log(`[EPG] Station 1 — current show:`, show)
-      }
     })
     return shows
   }, [epgData, timeTick])
@@ -191,18 +185,27 @@ export function useRadioLogic() {
 
   const togglePlay = useCallback(() => {
     if (currentStationIndex === null) return
-    if (stationHasError) {
-      selectStation(currentStationIndex)
-      return
-    }
+
     const audio = audioRef.current
     if (audio.paused) {
-      audio.play().then(() => setIsPlaying(true))
+      if (stationHasError) {
+        /* recover from a previous failed play attempt */
+        const station = stations[currentStationIndex]
+        audio.src = station.url
+        audio.volume = volume
+        setStationHasError(false)
+      }
+      audio.play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.error('Play rejected:', err.name, err.message)
+          setStationHasError(true)
+        })
     } else {
       audio.pause()
       setIsPlaying(false)
     }
-  }, [currentStationIndex, stationHasError, selectStation])
+  }, [currentStationIndex, stationHasError, volume, stations])
 
   const changeVolume = useCallback((val) => {
     const vol = parseFloat(val)

@@ -452,8 +452,12 @@ body::after {
 
 /* lit states — retro green-to-red gradient like 90s EQ */
 .bar-seg.seg-base {
-  background: #00c840;
-  box-shadow: 0 0 3px rgba(0,200,64,.5);
+  background: #00a030;
+  box-shadow: 0 0 3px rgba(0,160,48,.4);
+}
+.bar-seg.seg-bass {
+  background: #007828;
+  box-shadow: 0 0 3px rgba(0,120,40,.45);
 }
 .bar-seg.seg-mid {
   background: #80d000;
@@ -462,6 +466,10 @@ body::after {
 .bar-seg.seg-warm {
   background: #e8a000;
   box-shadow: 0 0 4px rgba(232,160,0,.5);
+}
+.bar-seg.seg-high {
+  background: #e06000;
+  box-shadow: 0 0 4px rgba(224,96,0,.5);
 }
 .bar-seg.seg-hot {
   background: #ff2e2e;

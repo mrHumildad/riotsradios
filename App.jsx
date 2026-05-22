@@ -44,6 +44,7 @@ function App() {
       </div>
 
       <PlayerDashboard
+        audioRef={audioRef}
         currentStationName={currentStationName}
         currentStationIndex={currentStationIndex}
         isPlaying={isPlaying}
