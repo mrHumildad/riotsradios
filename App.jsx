@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRadioLogic } from './logic.js'
 import { stations } from './stations.js'
+import logoPng from '/logob_transp_ffc107.png'
 import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
 import EPGModal from './comp/EPGModal.jsx'
@@ -46,19 +47,18 @@ function App() {
           rel="noopener noreferrer"
           aria-label="ONLYPUNKS repository"
         >
-          <span className="header-logo" aria-hidden="true" />
+          <img className="header-logo" src={logoPng} alt="" />
         </a>
 
-        <h1 className="header-brand">
+        <h1 className="header-brand" data-text="RIOTSRadIOS">
           <span className="header-brand-r">R</span>
           <span className="header-brand-i">I</span>
           <span className="header-brand-o">O</span>
           <span className="header-brand-t">T</span>
           <span className="header-brand-s">S</span>
-          <span className="header-brand-blink" aria-hidden="true">/</span>
-          <span className="header-brand-r2">R</span>
-          <span className="header-brand-a">a</span>
-          <span className="header-brand-d">d</span>
+          <span className="header-brand-6">R</span>
+          <span className="header-brand-a">A</span>
+          <span className="header-brand-d">D</span>
           <span className="header-brand-i2">I</span>
           <span className="header-brand-o2">O</span>
           <span className="header-brand-s2">S</span>

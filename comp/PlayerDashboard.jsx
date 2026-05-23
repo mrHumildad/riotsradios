@@ -121,16 +121,12 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
 
   return (
     <div className="player-dashboard">
-      <span className="corner-screw tl" aria-hidden="true" />
-      <span className="corner-screw tr" aria-hidden="true" />
-      <span className="corner-screw bl" aria-hidden="true" />
-      <span className="corner-screw br" aria-hidden="true" />
+
 
       <div className="crt-display" aria-label="Current station">
         <span id="current-station" className="display-text">{crtText}</span>
       </div>
 
-      <div className="panel-divider" />
 
       <div className="soundbar-module" aria-label="Spectrum analyzer" role="img">
         <div className="soundbar-header">
@@ -160,7 +156,6 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
         </div>
       </div>
 
-      <div className="panel-divider" />
 
       <div className="ctrl-row">
         <div className="ctrl-left">

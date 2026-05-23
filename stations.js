@@ -22,11 +22,11 @@ export const stations = [
   },
   {
     id: 3,
-    name: "Radio Caroline",
-    location: "United Kingdom",
-    webpage: "https://www.radiocaroline.co.uk/#home.html",
-    url: "http://sc6.radiocaroline.net:8040/",
-    icon: "https://www.radio.net/175/carolineinternational.png?version=e6efa3da5668fd004163801d934235246ca1c111",
+    name: "Radio Ciroma",
+    location: "Cosenza, Calabria",
+    webpage: "https://ciroma.org/",
+    url: "https://s.streampunk.cc/ciroma.mp3",
+    icon: "https://ciroma.org/images/ciroma_small.png",
     description: "",
     epg: ""
   },
@@ -40,13 +40,13 @@ export const stations = [
     description: "",
     epg: ""
   },
-  {
+   {
     id: 5,
-    name: "FM La Boca",
-    location: "Buenos Aires, Argentina",
-    webpage: "https://www.fmlaboca.com.ar/",
-    url: "https://s24.myradiostream.com:14984/listen.mp3",
-    icon: "https://www.fmlaboca.com.ar/wp-content/themes/noticias/images/logo.png",
+    name: "Radio Città Fujiko",
+    location: "Bologna, Emilia",
+    webpage: "https://www.radiocittafujiko.it/",
+    url: "https://streaming.radiocittafujiko.it:8000/rcf.ogg",
+    icon: "https://pbs.twimg.com/profile_images/345880108/piccolocpmeadesivo.gif_reasonably_small.gif",
     description: "",
     epg: ""
   },
@@ -291,44 +291,6 @@ export const stations = [
     description: "",
     epg: ""
   },
-  {
-    id: 30,
-    name: "Radio Città Fujiko",
-    location: "Bologna, Emilia",
-    webpage: "https://www.radiocittafujiko.it/",
-    url: "https://streaming.radiocittafujiko.it:8000/rcf.ogg",
-    icon: "https://pbs.twimg.com/profile_images/345880108/piccolocpmeadesivo.gif_reasonably_small.gif",
-    description: "",
-    epg: ""
-  },
-  {
-    id: 31,
-    name: "Radio Ciroma",
-    location: "Cosenza, Calabria",
-    webpage: "https://ciroma.org/",
-    url: "https://s.streampunk.cc/ciroma.mp3",
-    icon: "https://ciroma.org/images/ciroma_small.png",
-    description: "",
-    epg: ""
-  },
-  {
-    id: 32,
-    name: "",
-    location: "",
-    webpage: "",
-    url: "",
-    icon: "",
-    description: "",
-    epg: ""
-  },
-  {
-    id: 33,
-    name: "",
-    location: "",
-    webpage: "",
-    url: "",
-    icon: "",
-    description: "",
-    epg: ""
-  }
+
+  
 ];
