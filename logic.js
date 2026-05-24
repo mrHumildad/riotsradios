@@ -59,7 +59,7 @@ function getCurrentShow(epg) {
 
 export function useRadioLogic() {
   const audioRef = useRef(new Audio())
-  const [currentStationIndex, setCurrentStationIndex] = useState(null)
+  const [currentStationIndex, setCurrentStationIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [stationHasError, setStationHasError] = useState(false)

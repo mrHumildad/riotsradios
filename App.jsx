@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRadioLogic } from './logic.js'
 import { stations } from './stations.js'
 import logoPng from '/logob_transp_ffc107.png'
@@ -32,9 +32,41 @@ function App() {
     ? '-'
     : stationHasError
       ? stations[currentStationIndex]?.name || 'Unknown'
-      : `Playing: ${stations[currentStationIndex]?.name || 'Unknown'}`;
+      : `${stations[currentStationIndex]?.name || 'Unknown'}`;
 
   const modalEpg = epgModalStation ? epgData.get(epgModalStation.id) : null
+
+  useEffect(() => {
+    const isLeft  = e => ['ArrowLeft','Left'].includes(e.key) || e.keyCode === 37;
+    const isRight = e => ['ArrowRight','Right'].includes(e.key) || e.keyCode === 39;
+    const isUp    = e => ['ArrowUp','Up'].includes(e.key) || e.keyCode === 38;
+    const isDown  = e => ['ArrowDown','Down'].includes(e.key) || e.keyCode === 40;
+    const isEnter = e => ['Enter','NumpadEnter'].includes(e.key) || e.keyCode === 13;
+    const isEsc   = e => ['Escape','Esc','Backspace'].includes(e.key) || [27,8].includes(e.keyCode);
+    const isEPG   = e => (e.key && e.key.toLowerCase()==='e') || e.keyCode===69 || e.key==='ContextMenu' || e.keyCode===93 || (e.key && e.key.toLowerCase()==='i') || e.keyCode===73 || e.key==='Menu';
+    const isMediaPP = e => e.code === 'MediaPlayPause' || e.keyCode === 179;
+    const isMediaStop = e => e.code === 'MediaStop' || e.keyCode === 178;
+
+    const h = (e) => {
+      if (e.isComposing) return;
+      const hasModal = !!epgModalStation;
+      if (hasModal) {
+        if (isEsc(e)) { setEpgModalStation(null); e.preventDefault(); }
+        return;
+      }
+      if (isLeft(e)) { prevStation(); e.preventDefault(); return; }
+      if (isRight(e)) { nextStation(); e.preventDefault(); return; }
+      if (isUp(e)) { changeVolume(Math.min(1, volume+0.05)); e.preventDefault(); return; }
+      if (isDown(e)) { changeVolume(Math.max(0, volume-0.05)); e.preventDefault(); return; }
+      if (isEnter(e) || isMediaPP(e)) { togglePlay(); e.preventDefault(); return; }
+      if (isMediaStop(e) && isPlaying) { togglePlay(); e.preventDefault(); return; }
+      if (isEPG(e) && currentStationObject && epgData.has(currentStationObject.id)) {
+        setEpgModalStation(currentStationObject); e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [epgModalStation, currentStationObject, epgData, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying, setEpgModalStation]);
 
   return (
     <div className="container">
