@@ -8,6 +8,16 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 - Retro-futuristic "post-punk" interface with amber CRT aesthetics
 - Station list with live playback controls
 
+## Keyboard & Remote Controls (Android TV / TV browsers)
+
+- ← → : previous / next station
+- ↑ ↓ : volume ±5%
+- Enter / OK / DPAD center : play / pause
+- Esc / Back : close EPG modal
+- E / Option / Menu / Info button : open EPG for current station
+- MediaPlayPause / MediaStop keys also supported
+Works in any browser; designed for D-pad remotes on Android TV, Fire TV, etc.
+
 ## TODO
 - Weekly EPG (Electronic Program Guide) support for select stations
 - Add more stations

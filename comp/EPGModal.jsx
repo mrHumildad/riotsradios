@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 
 function EPGModal({ station, epg, getDaySchedule, onClose }) {
   const [dayOffset, setDayOffset] = useState(0)
+  const scheduleRef = useRef(null)
 
   if (!epg) return null
 
@@ -9,12 +10,30 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
   const categories = epg.metadata?.categories || {}
   const daySchedule = getDaySchedule(station.id, dayOffset)
 
-  const goPrevDay = () => setDayOffset(d => d - 1)
-  const goNextDay = () => setDayOffset(d => d + 1)
-  const goToday = () => setDayOffset(0)
+  const goPrevDay = useCallback(() => setDayOffset(d => d - 1), [])
+  const goNextDay = useCallback(() => setDayOffset(d => d + 1), [])
+  const goToday = useCallback(() => setDayOffset(0), [])
 
   const canGoPrev = getDaySchedule(station.id, dayOffset - 1) !== null
   const canGoNext = getDaySchedule(station.id, dayOffset + 1) !== null
+
+  useEffect(() => {
+    const isLeft  = e => ['ArrowLeft','Left'].includes(e.key) || e.keyCode === 37;
+    const isRight = e => ['ArrowRight','Right'].includes(e.key) || e.keyCode === 39;
+    const isUp    = e => ['ArrowUp','Up'].includes(e.key) || e.keyCode === 38;
+    const isDown  = e => ['ArrowDown','Down'].includes(e.key) || e.keyCode === 40;
+    const isEsc   = e => ['Escape','Esc','Backspace'].includes(e.key) || [27,8].includes(e.keyCode);
+    const h = (e) => {
+      if (e.isComposing) return;
+      if (isEsc(e)) { onClose(); e.preventDefault(); return; }
+      if (isLeft(e) && canGoPrev) { goPrevDay(); e.preventDefault(); return; }
+      if (isRight(e) && canGoNext) { goNextDay(); e.preventDefault(); return; }
+      if (isUp(e)) { scheduleRef.current?.scrollBy({top: -120, behavior: 'smooth'}); e.preventDefault(); return; }
+      if (isDown(e)) { scheduleRef.current?.scrollBy({top: 120, behavior: 'smooth'}); e.preventDefault(); return; }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose, canGoPrev, canGoNext, goPrevDay, goNextDay]);
 
   return (
     <div className="epg-modal-overlay" onClick={onClose}>
@@ -39,7 +58,7 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
           <button className="epg-today-btn" onClick={goToday}>TODAY</button>
         )}
 
-        <div className="epg-schedule">
+        <div className="epg-schedule" ref={scheduleRef}>
           {daySchedule ? (
             daySchedule.programs.map((prog, i) => (
               <div
