@@ -20,8 +20,19 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 Works in any browser; designed for D-pad remotes on Android TV, Fire TV, etc.
 
 ## TODO
-- Weekly EPG (Electronic Program Guide) support for select stations
+- Weekly EPG (Electronic Program Guide) support — now with contributor-friendly v2 format using show IDs and wall-clock times
 - Add more stations
+
+## Contributing EPG Schedules
+
+ONLYPUNKS accepts EPG schedule files for community radio stations. See `docs/EPG-FORMAT.md` for the v2 schema specification.
+
+Quick summary:
+- Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required
+- Define unique shows once in the `shows` catalog and reference them by `show_id` in daily grids
+- Copy `public/EPGs/template.json` and fill in your schedule
+- Validate at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) with schema `public/EPGs/epg-schema.json`
+- Send the completed file or open a PR
 
 ## Stations
 
