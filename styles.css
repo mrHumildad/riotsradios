@@ -638,7 +638,7 @@ body::after {
   border-radius: 2px;
   background: #1a1a14;
   border: 1px solid var(--border-warm);
-  color: var(--amber-dim);
+  color: var(--red-live);
   transition: color .3s ease, border-color .3s ease, text-shadow .3s ease;
 }
 
@@ -874,9 +874,8 @@ body::after {
   padding: 0 6px;
 }
 
-/* Play / Pause button — green face */
-.push-btn.play-btn[disabled],
-.push-btn.play-btn.is-playing {
+/* Play / Stop button — green when stopped (play), red when playing (stop) */
+.push-btn.play-btn {
   background: linear-gradient(
     to bottom,
     #20ff80 0%,
@@ -889,6 +888,21 @@ body::after {
     inset 0 1px 0 rgba(255,255,255,.35),
     inset 0 -2px 0 rgba(0,0,0,.25);
   color: #001a08;
+}
+
+.push-btn.play-btn.is-playing {
+  background: linear-gradient(
+    to bottom,
+    var(--red-live) 0%,
+    #c41a1a 50%,
+    #8a0000 100%
+  );
+  box-shadow:
+    0 5px 0 #5c1515,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+  color: #1a0000;
 }
 
 /*---------- disabled state ----------*/
@@ -1094,7 +1108,7 @@ input[type="range"]::-moz-range-track {
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(232,160,0,.04),
+    rgba(232,160,0,0.2),
     transparent
   );
   animation: scan-line 2.5s linear infinite;

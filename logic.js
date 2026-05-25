@@ -59,6 +59,7 @@ function getCurrentShow(epg) {
 
 export function useRadioLogic() {
   const audioRef = useRef(new Audio())
+  const currentStreamUrlRef = useRef('')
   const [currentStationIndex, setCurrentStationIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
@@ -69,6 +70,15 @@ export function useRadioLogic() {
   useEffect(() => {
     const id = setInterval(() => setTimeTick(t => t + 1), 60000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    return () => {
+      audio.pause()
+      audio.src = ''
+      currentStreamUrlRef.current = ''
+    }
   }, [])
 
   useEffect(() => {
@@ -158,9 +168,9 @@ export function useRadioLogic() {
   const selectStation = useCallback((index) => {
     const audio = audioRef.current
 
-    if (currentStationIndex === index) return
+    if (currentStationIndex === index && isPlaying) return
 
-    if (currentStationIndex !== null) {
+    if (currentStationIndex !== null && currentStationIndex !== index) {
       const prevId = `station-${currentStationIndex}`
       const prevEl = document.getElementById(prevId)
       if (prevEl) prevEl.classList.remove('playing')
@@ -171,6 +181,7 @@ export function useRadioLogic() {
     setCurrentStationIndex(index)
 
     audio.src = station.url
+    currentStreamUrlRef.current = station.url
     audio.volume = volume
     audio.play()
       .then(() => {
@@ -181,17 +192,25 @@ export function useRadioLogic() {
         setStationHasError(true)
         console.error('Playback error:', err)
       })
-  }, [currentStationIndex, volume])
+  }, [currentStationIndex, isPlaying, volume])
 
   const togglePlay = useCallback(() => {
     if (currentStationIndex === null) return
 
     const audio = audioRef.current
-    if (audio.paused) {
-      if (stationHasError) {
-        /* recover from a previous failed play attempt */
-        const station = stations[currentStationIndex]
+    const station = stations[currentStationIndex]
+
+    if (isPlaying) {
+      // STOP the stream fetch / API call (prevents drain)
+      audio.pause()
+      audio.src = ''
+      currentStreamUrlRef.current = ''
+      setIsPlaying(false)
+    } else {
+      // (re)start fetching the live stream
+      if (stationHasError || currentStreamUrlRef.current !== station.url) {
         audio.src = station.url
+        currentStreamUrlRef.current = station.url
         audio.volume = volume
         setStationHasError(false)
       }
@@ -201,11 +220,8 @@ export function useRadioLogic() {
           console.error('Play rejected:', err.name, err.message)
           setStationHasError(true)
         })
-    } else {
-      audio.pause()
-      setIsPlaying(false)
     }
-  }, [currentStationIndex, stationHasError, volume, stations])
+  }, [currentStationIndex, isPlaying, stationHasError, volume, stations])
 
   const changeVolume = useCallback((val) => {
     const vol = parseFloat(val)
