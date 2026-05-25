@@ -3,6 +3,35 @@ import { stations } from './stations.js'
 
 const DAY_MAP = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
 
+function normalizeProgram(prog, shows = {}) {
+  const getMinutes = (t) => {
+    const [h, m] = t.split(':').map(Number)
+    return h * 60 + m
+  }
+  let normalized = { ...prog }
+  if (prog.end) {
+    normalized.startMin = getMinutes(prog.start)
+    normalized.endMin = prog.crosses_midnight ? 24 * 60 : getMinutes(prog.end)
+    normalized.durationMin = normalized.endMin - normalized.startMin
+  } else {
+    const [ph, pm] = prog.start.split(':').map(Number)
+    normalized.startMin = ph * 60 + pm
+    const blockUnit = 30
+    normalized.endMin = normalized.startMin + (prog.duration_blocks || 1) * blockUnit
+    normalized.durationMin = normalized.endMin - normalized.startMin
+  }
+  if (prog.show_id && shows[prog.show_id]) {
+    const show = shows[prog.show_id]
+    normalized.title = normalized.title || show.title
+    normalized.category = normalized.category || show.category
+    normalized.url = normalized.url || show.url
+    normalized.description = normalized.description || show.description
+    normalized.hosts = normalized.hosts || show.hosts
+    normalized.recurrence_note = normalized.recurrence_note || show.recurrence_note
+  }
+  return normalized
+}
+
 function getCurrentShow(epg) {
   if (!epg || !epg.days) return null
   const tz = epg.timezone || 'UTC'
@@ -23,34 +52,22 @@ function getCurrentShow(epg) {
   const [h, m] = timeStr.split(':').map(Number)
   const nowMinutes = h * 60 + m
 
-  const blockUnit = epg.block_unit_minutes || epg.metadata?.block_unit_minutes || 30
-
+  const shows = epg.shows || {}
   for (const prog of dayEntry.programs) {
-    const [ph, pm] = prog.start.split(':').map(Number)
-    const startMinutes = ph * 60 + pm
-    const endMinutes = startMinutes + prog.duration_blocks * blockUnit
-    if (nowMinutes >= startMinutes && nowMinutes < endMinutes) {
-      return { title: prog.title, category: prog.category, live: !!prog.live }
+    const p = normalizeProgram(prog, shows)
+    if (nowMinutes >= p.startMin && nowMinutes < p.endMin) {
+      return { title: p.title, category: p.category, live: !!p.live }
     }
   }
 
-  if (epg.gaps) {
-    const sorted = [...dayEntry.programs].sort((a, b) => {
-      const [ah, am] = a.start.split(':').map(Number)
-      const [bh, bm] = b.start.split(':').map(Number)
-      return (ah * 60 + am) - (bh * 60 + bm)
-    })
-    const firstStart = (() => {
-      const [sh, sm] = sorted[0].start.split(':').map(Number)
-      return sh * 60 + sm
-    })()
-    const lastEnd = (() => {
-      const last = sorted[sorted.length - 1]
-      const [lh, lm] = last.start.split(':').map(Number)
-      return lh * 60 + lm + last.duration_blocks * blockUnit
-    })()
+  const gapsTitle = epg.metadata?.default_filler?.title || epg.gaps
+  const gapsCategory = epg.metadata?.default_filler?.category || 'musica'
+  if (gapsTitle) {
+    const sorted = [...dayEntry.programs].map(p => normalizeProgram(p, shows)).sort((a, b) => a.startMin - b.startMin)
+    const firstStart = sorted[0].startMin
+    const lastEnd = sorted[sorted.length - 1].endMin
     if (nowMinutes >= firstStart && nowMinutes < lastEnd) {
-      return { title: epg.gaps, category: 'musica', live: false, isGap: true }
+      return { title: gapsTitle, category: gapsCategory, live: false, isGap: true }
     }
   }
 
@@ -114,54 +131,48 @@ export function useRadioLogic() {
     const targetDay = epgDayNames[targetEpgIdx]
     const dayEntry = epg.days.find(d => d.day === targetDay)
     if (!dayEntry) return null
-  const blockUnit = epg.block_unit_minutes || epg.metadata?.block_unit_minutes || 30
+
     const nowMinutes = (() => {
       const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(now)
       const [h, m] = timeStr.split(':').map(Number)
       return h * 60 + m
     })()
     const isToday = dayOffset === 0 && currentEpgIdx >= 0
-    const sorted = [...dayEntry.programs].sort((a, b) => {
-      const [ah, am] = a.start.split(':').map(Number)
-      const [bh, bm] = b.start.split(':').map(Number)
-      return (ah * 60 + am) - (bh * 60 + bm)
-    })
+    const shows = epg.shows || {}
+    const gapsTitle = epg.metadata?.default_filler?.title || epg.gaps
+    const gapsCategory = epg.metadata?.default_filler?.category || 'musica'
+
+    const sorted = [...dayEntry.programs].map(p => normalizeProgram(p, shows)).sort((a, b) => a.startMin - b.startMin)
     const programs = []
     for (let i = 0; i < sorted.length; i++) {
       const p = sorted[i]
-      const [ph, pm] = p.start.split(':').map(Number)
-      const startMin = ph * 60 + pm
-      const endMin = startMin + p.duration_blocks * blockUnit
-      if (epg.gaps && programs.length > 0) {
+      if (gapsTitle && programs.length > 0) {
         const prevEnd = programs[programs.length - 1].endMin
-        if (startMin > prevEnd) {
+        if (p.startMin > prevEnd) {
           programs.push({
             start: String(Math.floor(prevEnd / 60)).padStart(2, '0') + ':' + String(prevEnd % 60).padStart(2, '0'),
-            title: epg.gaps,
-            category: 'musica',
+            title: gapsTitle,
+            category: gapsCategory,
             live: false,
-            duration_blocks: (startMin - prevEnd) / blockUnit,
+            durationMin: p.startMin - prevEnd,
             startMin: prevEnd,
-            endMin: startMin,
+            endMin: p.startMin,
             isGap: true,
-            isCurrent: isToday && nowMinutes >= prevEnd && nowMinutes < startMin,
-            isPast: isToday && nowMinutes >= startMin
+            isCurrent: isToday && nowMinutes >= prevEnd && nowMinutes < p.startMin,
+            isPast: isToday && nowMinutes >= p.startMin
           })
         }
       }
       programs.push({
         ...p,
-        startMin,
-        endMin,
-        isCurrent: isToday && nowMinutes >= startMin && nowMinutes < endMin,
-        isPast: isToday && nowMinutes >= endMin
+        isCurrent: isToday && nowMinutes >= p.startMin && nowMinutes < p.endMin,
+        isPast: isToday && nowMinutes >= p.endMin
       })
     }
     return {
       label: dayEntry.label || dayEntry.day,
       programs,
-      isToday,
-      blockUnit
+      isToday
     }
   }, [epgData])
 

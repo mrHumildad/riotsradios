@@ -1053,6 +1053,7 @@ input[type="range"]::-moz-range-track {
 .station-list-inner {
   flex: 0 0 90%;
   overflow-y: auto;
+  scroll-behavior: smooth;
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
@@ -1246,6 +1247,50 @@ input[type="range"]::-moz-range-track {
 .station-item:hover::before {
   background: transparent;
   box-shadow: none;
+}
+
+.station-item.selected {
+  border-left-color: var(--red-live);
+  background: linear-gradient(
+    90deg,
+    rgba(255,46,46,.05) 0%,
+    var(--panel-dark) 40%
+  );
+  box-shadow:
+    0 0 10px var(--amber-glow-sm),
+    0 1px 0 rgba(0,0,0,.5);
+}
+
+.station-item.selected .station-num {
+  color: var(--red-live);
+  text-shadow: 0 0 7px var(--red-live);
+}
+
+.station-item.selected .play-ind {
+  color: var(--red-live);
+  text-shadow: 0 0 6px var(--red-live);
+}
+
+/* playing marker line at very right — red version */
+.station-item.selected::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--red-live);
+  box-shadow: 0 0 8px var(--red-live);
+}
+
+.station-item.selected:hover {
+  /* keep red highlight on hover (parallel to .playing winning over hover) */
+  border-left-color: var(--red-live);
+}
+
+.station-item.selected:hover::before {
+  background: var(--red-live);
+  box-shadow: 0 0 8px var(--red-live);
 }
 
 /* homepage link inline */
@@ -1644,6 +1689,15 @@ input[type="range"]::-moz-range-track {
   font-size: 0.55rem;
   color: var(--warm-gray);
   letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.epg-prog-note {
+  font-family: var(--font-stencil);
+  font-size: 0.5rem;
+  color: var(--amber);
+  letter-spacing: .05em;
   text-transform: uppercase;
   margin-top: 2px;
 }

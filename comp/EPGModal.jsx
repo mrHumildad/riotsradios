@@ -6,7 +6,6 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
 
   if (!epg) return null
 
-  const blockUnit = epg.block_unit_minutes || epg.metadata?.block_unit_minutes || 30
   const categories = epg.metadata?.categories || {}
   const daySchedule = getDaySchedule(station.id, dayOffset)
 
@@ -65,17 +64,18 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
                 key={i}
                 className={`epg-prog${prog.isCurrent ? ' is-current' : ''}${prog.isPast ? ' is-past' : ''}${prog.isGap ? ' is-gap' : ''}`}
               >
-                <div className="epg-prog-time">
-                  <span className="epg-start">{prog.start}</span>
-                  <span className="epg-duration">{prog.duration_blocks * blockUnit}m</span>
-                </div>
-                <div className="epg-prog-body">
-                  <div className="epg-prog-title-row">
-                    {prog.live && <span className="epg-prog-live">● LIVE</span>}
-                    <span className="epg-prog-title">{prog.title}</span>
-                  </div>
-                  <div className="epg-prog-cat">{categories[prog.category] || prog.category}</div>
-                </div>
+<div className="epg-prog-time">
+                   <span className="epg-start">{prog.start}</span>
+                   <span className="epg-duration">{prog.durationMin}m</span>
+                 </div>
+<div className="epg-prog-body">
+                   <div className="epg-prog-title-row">
+                     {prog.live && <span className="epg-prog-live">● LIVE</span>}
+                     <span className="epg-prog-title">{prog.title}</span>
+                   </div>
+                   <div className="epg-prog-cat">{categories[prog.category] || prog.category}</div>
+                   {prog.recurrence_note && <div className="epg-prog-note">{prog.recurrence_note}</div>}
+                 </div>
                 {prog.url && (
                   <a
                     href={prog.url}

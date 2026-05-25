@@ -168,26 +168,26 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
               disabled={isIdle}
               aria-label="Previous station"
             >
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <path d="M11 12 4 8l7-4z"/><path d="M4 4h2v8H4z"/>
               </svg>
             </button>
 
-<button
-               id="play-pause-btn"
-               className={`push-btn play-btn${isPlaying ? ' is-playing' : ''}`}
-               onClick={onTogglePlay}
-               disabled={isIdle}
-               aria-label={isIdle ? 'Play (select a station first)' : isPlaying ? 'Stop' : 'Play'}
-             >
-               {isPlaying
-                 ? <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                     <rect x="3" y="3" width="10" height="10" rx="1"/>
-                   </svg>
-                 : <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                     <path d="M4 2l10 6-10 6z"/>
-                   </svg>}
-             </button>
+            <button
+              id="play-pause-btn"
+              className={`push-btn play-btn${isPlaying ? ' is-playing' : ''}`}
+              onClick={onTogglePlay}
+              disabled={isIdle}
+              aria-label={isIdle ? 'Play (select a station first)' : isPlaying ? 'Stop' : 'Play'}
+            >
+              {isPlaying
+                ? <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <rect x="3" y="3" width="10" height="10" rx="1"/>
+                  </svg>
+                : <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                    <path d="M4 2l10 6-10 6z"/>
+                  </svg>}
+            </button>
 
             <button
               id="next-station-btn"
@@ -196,7 +196,7 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
               disabled={isIdle}
               aria-label="Next station"
             >
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                 <path d="M5 4l7 4-7 4z"/><path d="M10 4h2v8h-2z"/>
               </svg>
             </button>
