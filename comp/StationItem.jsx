@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-function StationItem({ station, index, isPlaying, onSelect, currentShow, hasEpg, onOpenEpg }) {
+function StationItem({ station, index, isActive, onSelect, currentShow, hasEpg, onOpenEpg }) {
   const [showEpgName, setShowEpgName] = useState(false)
 
   useEffect(() => {
@@ -20,7 +20,7 @@ function StationItem({ station, index, isPlaying, onSelect, currentShow, hasEpg,
   return (
     <div
       id={`station-${index}`}
-      className={`station-item${isPlaying ? ' playing' : ''}`}
+      className={`station-item${isActive ? ' playing' : ''}`}
       onClick={() => onSelect(index)}
     >
       <div className="station-num">{String(index + 1).padStart(2, '0')}</div>
@@ -70,7 +70,7 @@ function StationItem({ station, index, isPlaying, onSelect, currentShow, hasEpg,
           </a>
         )}
         <div className="play-ind" aria-hidden="true">
-          {isPlaying ? '▶' : '▷'}
+          {isActive ? '▶' : '▷'}
         </div>
       </div>
     </div>

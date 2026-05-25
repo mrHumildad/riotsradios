@@ -22,7 +22,7 @@ function App() {
     nextStation,
     prevStation
   } = useRadioLogic();
-
+  console.log('App render:', { currentStationIndex, isPlaying, volume, stationHasError })
   const [epgModalStation, setEpgModalStation] = useState(null)
 
   const currentStationObject = currentStationIndex !== null ? stations[currentStationIndex] : null
@@ -123,6 +123,7 @@ function App() {
       <StationList
         stations={stations}
         currentStationIndex={currentStationIndex}
+        isPlaying={isPlaying}
         onSelectStation={selectStation}
         epgData={epgData}
         currentShows={currentShows}
