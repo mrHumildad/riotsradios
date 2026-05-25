@@ -1873,3 +1873,20 @@ input[type="range"]::-moz-range-track {
   opacity: .35;
   pointer-events: none;
 }
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ad-cluster{display:flex;align-items:center;gap:1px;max-width:0;overflow:hidden;transition:max-width 1100ms cubic-bezier(.25,.1,.25,1),opacity .7s ease}
+.header-brand.radios .ad-cluster{max-width:1.72em}
+.header-brand-a,.header-brand-d{transition:transform .65s ease,opacity .5s ease;transform:scale(.38);opacity:.35}
+.header-brand.radios .header-brand-a,.header-brand.radios .header-brand-d{transform:scale(1);opacity:1}
+.header-brand-t{display:inline-block;max-width:.71em;overflow:hidden;transition:max-width 1100ms cubic-bezier(.25,.1,.25,1),transform 1100ms ease,opacity .75s ease;transform-origin:center}
+.header-brand.radios .header-brand-t{max-width:0;transform:scaleX(.11);opacity:0}
+.header-brand.is-morphing .header-brand-t{animation:t-morph-flash .55s cubic-bezier(.4,0,.2,1) 1}
+@keyframes t-morph-flash{0%,100%{filter:none;color:inherit}35%{filter:blur(.9px) saturate(1.4);color:#ff2e2e}}
+@media (prefers-reduced-motion:reduce){
+  .header-brand,.header-brand *{animation:none!important;transition:none!important}
+  .header-brand.reduced-motion>span,
+  .header-brand.reduced-motion .header-brand-6,
+  .header-brand.reduced-motion .ad-cluster,
+  .header-brand.reduced-motion .header-brand-t{opacity:1!important;transform:none!important;max-width:none!important}
+  .header-brand.reduced-motion .visually-hidden{display:none}
+}

@@ -24,6 +24,10 @@ function App() {
   } = useRadioLogic();
   console.log('App render:', { currentStationIndex, isPlaying, volume, stationHasError })
   const [epgModalStation, setEpgModalStation] = useState(null)
+  const [brandState, setBrandState] = useState('riots')
+  const [brandWord, setBrandWord] = useState('RIOTS')
+  const [isMorphing, setIsMorphing] = useState(false)
+  const [prefersReduced, setPrefersReduced] = useState(false)
 
   const currentStationObject = currentStationIndex !== null ? stations[currentStationIndex] : null
   const currentShow = currentStationObject ? currentShows.get(currentStationObject.id) || null : null
@@ -68,6 +72,47 @@ function App() {
     return () => window.removeEventListener('keydown', h);
   }, [epgModalStation, currentStationObject, epgData, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying, setEpgModalStation]);
 
+  useEffect(() => {
+    const m = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e) => setPrefersReduced(e.matches);
+    setPrefersReduced(m.matches);
+    m.addEventListener('change', onChange);
+    return () => m.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (prefersReduced) return;
+    let timer;
+    let phase = 0;
+    const timings = [4500, 1100, 4500, 1100];
+    const step = () => {
+      if (phase === 0) {
+        setBrandState('riots');
+        setBrandWord('RIOTS');
+      } else if (phase === 1) {
+        setBrandState('radios');
+        setBrandWord('RADIOS');
+        setIsMorphing(true);
+        setTimeout(() => setIsMorphing(false), 650);
+      } else if (phase === 2) {
+        setBrandState('radios');
+        setBrandWord('RADIOS');
+      } else if (phase === 3) {
+        setBrandState('riots');
+        setBrandWord('RIOTS');
+        setIsMorphing(true);
+        setTimeout(() => setIsMorphing(false), 650);
+      }
+      const delay = timings[phase];
+      timer = setTimeout(() => {
+        phase = (phase + 1) % 4;
+        step();
+      }, delay);
+    };
+    step();
+    return () => { clearTimeout(timer); };
+  }, [prefersReduced]);
+
   return (
     <div className="container">
 
@@ -82,18 +127,35 @@ function App() {
           <img className="header-logo" src={logoPng} alt="" />
         </a>
 
-        <h1 className="header-brand" data-text="RIOTSRadIOS">
-          <span className="header-brand-r">R</span>
-          <span className="header-brand-i">I</span>
-          <span className="header-brand-o">O</span>
-          <span className="header-brand-t">T</span>
-          <span className="header-brand-s">S</span>
-          <span className="header-brand-6">R</span>
-          <span className="header-brand-a">A</span>
-          <span className="header-brand-d">D</span>
-          <span className="header-brand-i2">I</span>
-          <span className="header-brand-o2">O</span>
-          <span className="header-brand-s2">S</span>
+        <h1 className={`header-brand ${brandState}${prefersReduced ? ' reduced-motion' : ''}${isMorphing ? ' is-morphing' : ''}`} data-text={brandWord} aria-label="RIOTSRADIOS">
+          <span className="visually-hidden">{brandWord}</span>
+          {prefersReduced ? (
+            <>
+              <span className="header-brand-r">R</span>
+              <span className="header-brand-i">I</span>
+              <span className="header-brand-o">O</span>
+              <span className="header-brand-t">T</span>
+              <span className="header-brand-s">S</span>
+              <span className="header-brand-6">R</span>
+              <span className="header-brand-a">A</span>
+              <span className="header-brand-d">D</span>
+              <span className="header-brand-i2">I</span>
+              <span className="header-brand-o2">O</span>
+              <span className="header-brand-s2">S</span>
+            </>
+          ) : (
+            <>
+              <span className="header-brand-r">R</span>
+              <span className="ad-cluster">
+                <span className="header-brand-a">A</span>
+                <span className="header-brand-d">D</span>
+              </span>
+              <span className="header-brand-i">I</span>
+              <span className="header-brand-o">O</span>
+              <span className="header-brand-t">T</span>
+              <span className="header-brand-s">S</span>
+            </>
+          )}
         </h1>
 
         <button
