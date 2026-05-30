@@ -89,6 +89,21 @@ npm run build
 npm run deploy
 ```
 
+## Release
+
+For versioned releases with changelogs:
+
+```bash
+# 1. Document changes
+npx changeset
+
+# 2. Commit changeset file
+git add .changeset/ && git commit -m "docs: add changeset"
+
+# 3. Release (bumps version, updates CHANGELOG, deploys, pushes tags)
+npm run release
+```
+
 ## Tech Stack
 
 - React 19

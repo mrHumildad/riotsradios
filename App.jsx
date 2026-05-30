@@ -5,7 +5,7 @@ import logoPng from '/logob_transp_ffc107.png'
 import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
 import EPGModal from './comp/EPGModal.jsx'
-
+import { version } from './package.json'
 function App() {
   const {
     audioRef,
@@ -28,7 +28,7 @@ function App() {
   const [brandWord, setBrandWord] = useState('RIOTS')
   const [isMorphing, setIsMorphing] = useState(false)
   const [prefersReduced, setPrefersReduced] = useState(false)
-
+  
   const currentStationObject = currentStationIndex !== null ? stations[currentStationIndex] : null
   const currentShow = currentStationObject ? currentShows.get(currentStationObject.id) || null : null
 
@@ -193,9 +193,8 @@ function App() {
       />
 
       <div className="chassis-footer" aria-hidden="true">
-        <span className="footer-sig footer-logo">OPR</span>
+        <span className="footer-sig footer-logo footer-version">v{version}</span>
         <span>2026@mrhumildad</span>
-        <span>CH&nbsp;{currentStationIndex !== null ? String(currentStationIndex + 1).padStart(2,'0') : '--'}</span>
       </div>
 
       {epgModalStation && (
