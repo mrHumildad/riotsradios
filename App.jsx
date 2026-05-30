@@ -194,7 +194,7 @@ function App() {
 
       <div className="chassis-footer" aria-hidden="true">
         <span className="footer-sig footer-logo footer-version">v{version}</span>
-        <span>2026@mrhumildad</span>
+        <span>mrhumildad</span>
       </div>
 
       {epgModalStation && (

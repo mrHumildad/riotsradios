@@ -156,14 +156,44 @@ body::after {
 }
 
 .header-logo {
-  display: block;
-  width: clamp(28px, 5dvh, 44px);
-  height: clamp(28px, 5dvh, 44px);
-  border-radius: 8px;
-  object-fit: contain;
-  transition: transform .35s cubic-bezier(.25,.1,.25,1),
-              filter .35s ease;
-}
+   display: block;
+   width: clamp(28px, 5dvh, 44px);
+   height: clamp(28px, 5dvh, 44px);
+   border-radius: 8px;
+   object-fit: contain;
+   transition: transform .35s cubic-bezier(.25,.1,.25,1),
+               filter .35s ease;
+   animation: logo-glitch 6s ease-in-out infinite;
+   filter: drop-shadow(0 0 6px rgba(232,160,0,.4));
+ }
+
+ .header-logo-link:hover .header-logo {
+   transform: scale(1.08);
+   filter: drop-shadow(0 0 10px rgba(232,160,0,.6));
+ }
+
+ @keyframes logo-glitch {
+   0%, 100% {
+     opacity: 1;
+     transform: translate(0, 0) rotate(0);
+     filter: drop-shadow(0 0 6px rgba(232,160,0,.4));
+   }
+   25% {
+     opacity: .92;
+     transform: translate(-1px, 1px) rotate(-.5deg);
+     filter: drop-shadow(-1px 0 4px rgba(255,46,46,.3));
+   }
+   50% {
+     opacity: 1;
+     transform: translate(1px, -1px) rotate(.3deg);
+     filter: drop-shadow(1px 0 5px rgba(255,145,0,.35));
+   }
+   75% {
+     opacity: .96;
+     transform: translate(-1px, -1px) skewX(.5deg);
+     filter: drop-shadow(0 0 4px rgba(255,208,0,.4));
+   }
+ }
 
 /* ========== CENTER: RIOTSRADIOS ========== */
 .header-brand {
@@ -1326,28 +1356,24 @@ input[type="range"]::-moz-range-track {
   background: var(--panel-dark);
   border: 1px solid var(--border-warm);
   border-top: 3px solid var(--border-warm);
+    border-bottom: 4px solid var(--amber-dim);
+
   padding: 8px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.55rem;
-  letter-spacing: .22em;
+  font-size: 0.65rem;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: var(--warm-gray);
-}
-
-.footer-sig {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-logo {
+  text-shadow: 0 0 6px var(--amber-glow);
   font-family: "Impact", "Arial Black", sans-serif;
-  color: var(--amber-dim);
+  color: var(--amber);
   letter-spacing: .15em;
-  font-size: 0.52rem;
+  text-shadow: 0 0 6px var(--amber-glow);
 }
+
+
+
 
 /* =========================================================
    SECTION 5 — EPG (Electronic Program Guide)
@@ -1883,10 +1909,11 @@ input[type="range"]::-moz-range-track {
 .header-brand.is-morphing .header-brand-t{animation:t-morph-flash .55s cubic-bezier(.4,0,.2,1) 1}
 @keyframes t-morph-flash{0%,100%{filter:none;color:inherit}35%{filter:blur(.9px) saturate(1.4);color:#ff2e2e}}
 @media (prefers-reduced-motion:reduce){
-  .header-brand,.header-brand *{animation:none!important;transition:none!important}
-  .header-brand.reduced-motion>span,
-  .header-brand.reduced-motion .header-brand-6,
-  .header-brand.reduced-motion .ad-cluster,
-  .header-brand.reduced-motion .header-brand-t{opacity:1!important;transform:none!important;max-width:none!important}
-  .header-brand.reduced-motion .visually-hidden{display:none}
-}
+   .header-brand,.header-brand *{animation:none!important;transition:none!important}
+   .header-logo{animation:none!important}
+   .header-brand.reduced-motion>span,
+   .header-brand.reduced-motion .header-brand-6,
+   .header-brand.reduced-motion .ad-cluster,
+   .header-brand.reduced-motion .header-brand-t{opacity:1!important;transform:none!important;max-width:none!important}
+   .header-brand.reduced-motion .visually-hidden{display:none}
+ }
