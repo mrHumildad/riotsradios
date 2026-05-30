@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://onlypunks.vercel.app/epg-schema.json",
-  "title": "ONLYPUNKS EPG v2 Schema",
+  "$id": "https://riotsradios.vercel.app/epg-schema.json",
+  "title": "RIOTSRADIOS EPG v2 Schema",
   "description": "Schema for radio station Electronic Program Guide data. Uses wall-clock start/end times (no blocks).",
   "type": "object",
   "required": ["version", "station", "station_id", "timezone", "days"],

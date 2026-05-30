@@ -1,6 +1,6 @@
-# ONLYPUNKS Radio (RadIOT)
+# RIOTSRADIOS Radio (RadIOT)
 
-Free Community Radio Player — a web-based radio tuner for independent and non commercial only stations worldwide.
+Free Community Radio Player — a web-based radio tuner for independent and non commercial riot stations worldwide.
 
 ## Features
 
@@ -25,7 +25,7 @@ Works in any browser; designed for D-pad remotes on Android TV, Fire TV, etc.
 
 ## Contributing EPG Schedules
 
-ONLYPUNKS accepts EPG schedule files for community radio stations. See `docs/EPG-FORMAT.md` for the v2 schema specification.
+RIOTSRADIOS accepts EPG schedule files for community radio stations. See `docs/EPG-FORMAT.md` for the v2 schema specification.
 
 Quick summary:
 - Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required

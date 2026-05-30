@@ -1,8 +1,8 @@
-# ONLYPUNKS EPG v2 Format Guide
+# RIOTSRADIOS EPG v2 Format Guide
 
 ## Overview
 
-The Electronic Program Guide (EPG) tells the ONLYPUNKS player what's playing on each station, when. This document describes the v2 format that stations should use when submitting their schedules.
+The Electronic Program Guide (EPG) tells the RIOTSRADIOS player what's playing on each station, when. This document describes the v2 format that stations should use when submitting their schedules.
 
 ## Key Principles
 
@@ -136,4 +136,4 @@ Save as `public/EPGs/{station_id}.json` (e.g., `1.json` for station 1).
 
 ## Questions?
 
-Email the ONLYPUNKS maintainer or open a GitHub issue.
+Email the RIOTSRADIOS maintainer or open a GitHub issue.
