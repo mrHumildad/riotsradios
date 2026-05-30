@@ -1,8 +1,8 @@
 {
-  "name": "onlypunks",
+  "name": "riotsradios",
   "version": "1.0.0",
   "description": "Free Community Radio Player",
-  "homepage": "https://mrhumildad.github.io/onlypunks/",
+  "homepage": "https://mrhumildad.github.io/riotsradios/",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrHumildad/onlypunks.git"
+    "url": "git+https://github.com/mrHumildad/riotsradios.git"
   },
   "keywords": [],
   "author": "",
