@@ -81,6 +81,7 @@ export function useRadioLogic() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [stationHasError, setStationHasError] = useState(false)
+  const [streamError, setStreamError] = useState(null)
   const [epgData, setEpgData] = useState(new Map())
   const [timeTick, setTimeTick] = useState(0)
 
@@ -188,18 +189,63 @@ export function useRadioLogic() {
     }
 
     const station = stations[index]
+    
+    // Check for mixed content before attempting to play
+    const isHttpOnHttps = station.url.startsWith('http://') && 
+      (typeof window !== 'undefined' && window.location.protocol === 'https:')
+    
+    if (isHttpOnHttps) {
+      setStationHasError(true)
+      setStreamError('mixed-content')
+      setCurrentStationIndex(index)
+      console.warn('Mixed content blocked: HTTP stream on HTTPS page', station.url)
+      return
+    }
+    
     setStationHasError(false)
+    setStreamError(null)
     setCurrentStationIndex(index)
 
     audio.src = station.url
     currentStreamUrlRef.current = station.url
     audio.volume = volume
+    
+    // Listen for error events on the audio element
+    const handleError = (e) => {
+      console.error('Audio element error event:', e)
+      setStationHasError(true)
+      setStreamError('playback')
+    }
+    audio.addEventListener('error', handleError, { once: true })
+    
+    // Check if stream fails to load within 3 seconds (common for blocked streams)
+    const timeoutCheck = setTimeout(() => {
+      if (!audio.src || audio.error) {
+        console.warn('Stream failed to load check')
+      } else if (audio.networkState === 3) { // NETWORK_NO_SOURCE
+        setStationHasError(true)
+        setStreamError('playback')
+        console.warn('Stream network error (no source)')
+      }
+    }, 3000)
+    
     audio.play()
       .then(() => {
+        clearTimeout(timeoutCheck)
         setIsPlaying(true)
         setStationHasError(false)
+        setStreamError(null)
       })
       .catch((err) => {
+        clearTimeout(timeoutCheck)
+        const isMixedContent = err.name === 'SecurityError' || 
+          (err.message && (err.message.toLowerCase().includes('mixed') || 
+           err.message.toLowerCase().includes('https')))
+        if (isMixedContent) {
+          setStreamError('mixed-content')
+        } else {
+          setStreamError('playback')
+        }
         setStationHasError(true)
         console.error('Playback error:', err)
       })
@@ -212,24 +258,46 @@ export function useRadioLogic() {
     const station = stations[currentStationIndex]
 
     if (isPlaying) {
-      // STOP the stream fetch / API call (prevents drain)
       audio.pause()
       audio.src = ''
       currentStreamUrlRef.current = ''
       setIsPlaying(false)
     } else {
-      // (re)start fetching the live stream
+      // Check for mixed content before attempting to play
+      const isHttpOnHttps = station.url.startsWith('http://') && 
+        (typeof window !== 'undefined' && window.location.protocol === 'https:')
+      
+      if (isHttpOnHttps) {
+        setStationHasError(true)
+        setStreamError('mixed-content')
+        console.warn('Mixed content blocked: HTTP stream on HTTPS page', station.url)
+        return
+      }
+      
       if (stationHasError || currentStreamUrlRef.current !== station.url) {
         audio.src = station.url
         currentStreamUrlRef.current = station.url
         audio.volume = volume
         setStationHasError(false)
+        setStreamError(null)
       }
       audio.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setIsPlaying(true)
+          setStationHasError(false)
+          setStreamError(null)
+        })
         .catch((err) => {
-          console.error('Play rejected:', err.name, err.message)
+          const isMixedContent = err.name === 'SecurityError' || 
+            (err.message && (err.message.toLowerCase().includes('mixed') || 
+             err.message.toLowerCase().includes('https')))
+          if (isMixedContent) {
+            setStreamError('mixed-content')
+          } else {
+            setStreamError('playback')
+          }
           setStationHasError(true)
+          console.error('Play rejected:', err.name, err.message)
         })
     }
   }, [currentStationIndex, isPlaying, stationHasError, volume, stations])
@@ -260,6 +328,7 @@ export function useRadioLogic() {
     isPlaying,
     volume,
     stationHasError,
+    streamError,
     epgData,
     currentShows,
     getDaySchedule,

@@ -584,6 +584,30 @@ body::after {
   animation: phosphor-flicker 7s 1s infinite;
 }
 
+/* Mixed content error state */
+.display-text.stream-error {
+  color: var(--crimson);
+  text-shadow:
+    0 0 6px var(--crimson),
+    0 0 22px rgba(200,35,51,.35),
+    0 0 50px rgba(200,35,51,.15),
+    0 0 80px rgba(200,35,51,.08);
+  animation: error-flash 1s steps(2, start) infinite;
+}
+
+@keyframes error-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Error mode indicator */
+.soundbar-mode.error-state {
+  color: var(--crimson);
+  border-color: var(--crimson-dim);
+  text-shadow: 0 0 8px var(--crimson), 0 0 16px rgba(200,35,51,.4);
+  animation: error-flash 1s steps(2, start) infinite;
+}
+
 @keyframes phosphor-flicker {
   0%,91%,100% { opacity: 1; }
   93% { opacity: .35; }
@@ -672,7 +696,19 @@ body::after {
   transition: color .3s ease, border-color .3s ease, text-shadow .3s ease;
 }
 
-.soundbar-mode:not(:contains("STANDBY")) {
+.soundbar-mode.error-state {
+  color: var(--crimson);
+  border-color: var(--crimson-dim);
+  text-shadow: 0 0 6px var(--crimson);
+}
+
+.soundbar-bars.is-active .soundbar-mode.error-state,
+.soundbar-module:has(.error-state) .soundbar-mode.error-state {
+  color: var(--crimson);
+  border-color: var(--crimson-dim);
+}
+
+.soundbar-mode:not(.is-standby) {
   /* will be overridden by is-active */
 }
 

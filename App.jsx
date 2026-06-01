@@ -7,12 +7,13 @@ import StationList from './comp/StationList.jsx'
 import EPGModal from './comp/EPGModal.jsx'
 import { version } from './package.json'
 function App() {
-  const {
+const {
     audioRef,
     currentStationIndex,
     isPlaying,
     volume,
     stationHasError,
+    streamError,
     epgData,
     currentShows,
     getDaySchedule,
@@ -22,7 +23,7 @@ function App() {
     nextStation,
     prevStation
   } = useRadioLogic();
-  console.log('App render:', { currentStationIndex, isPlaying, volume, stationHasError })
+   console.log('App render:', { currentStationIndex, isPlaying, volume, stationHasError, streamError })
   const [epgModalStation, setEpgModalStation] = useState(null)
   const [brandState, setBrandState] = useState('riots')
   const [brandWord, setBrandWord] = useState('RIOTS')
@@ -169,18 +170,20 @@ function App() {
         </button>
       </header>
 
-      <PlayerDashboard
-        audioRef={audioRef}
-        currentStationName={currentStationName}
-        currentStationIndex={currentStationIndex}
-        isPlaying={isPlaying}
-        volume={volume}
-        currentShow={currentShow}
-        onTogglePlay={togglePlay}
-        onChangeVolume={changeVolume}
-        onPrevStation={prevStation}
-        onNextStation={nextStation}
-      />
+<PlayerDashboard
+         audioRef={audioRef}
+         currentStationName={currentStationName}
+         currentStationIndex={currentStationIndex}
+         isPlaying={isPlaying}
+         volume={volume}
+         currentShow={currentShow}
+         stationHasError={stationHasError}
+         streamError={streamError}
+         onTogglePlay={togglePlay}
+         onChangeVolume={changeVolume}
+         onPrevStation={prevStation}
+         onNextStation={nextStation}
+       />
 
       <StationList
         stations={stations}
