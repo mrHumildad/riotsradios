@@ -99,12 +99,13 @@ function SoundBar({ level, index, total }) {
    PlayerDashboard
    ───────────────────────────────────────────────── */
 function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
-                           isPlaying, volume, currentShow,
-                           onTogglePlay, onChangeVolume,
-                           onPrevStation, onNextStation }) {
+                            isPlaying, volume, currentShow, stationHasError, streamError,
+                            onTogglePlay, onChangeVolume,
+                            onPrevStation, onNextStation }) {
   const bars      = useAudioBars(isPlaying, volume, currentStationIndex)
   const isIdle    = currentStationIndex === null
-  const modeLabel = isIdle ? 'IDLE' : isPlaying ? 'LIVE' : 'STOPPED'
+  const modeLabel = isIdle ? 'IDLE' : isPlaying ? 'LIVE' : streamError ? 'ERROR' : 'STOPPED'
+  const modeClass = streamError ? 'soundbar-mode error-state' : 'soundbar-mode'
 
   const [showEpgName, setShowEpgName] = useState(false)
 
@@ -115,23 +116,29 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
     return () => clearInterval(id)
   }, [currentShow])
 
-  const crtText = currentShow && showEpgName
+  const crtText = currentShow && showEpgName && !stationHasError
     ? (currentShow.live ? '● ' : '▷ ') + currentShow.title
+    : stationHasError && streamError === 'mixed-content'
+    ? 'STREAM ERROR (HTTPS)'
+    : stationHasError && streamError === 'playback'
+    ? 'PLAYBACK ERROR'
     : currentStationName
+
+  const displayClass = streamError ? 'display-text stream-error' : 'display-text'
 
   return (
     <div className="player-dashboard">
 
 
       <div className="crt-display" aria-label="Current station">
-        <span id="current-station" className="display-text">{crtText}</span>
+        <span id="current-station" className={displayClass}>{crtText}</span>
       </div>
 
 
       <div className="soundbar-module" aria-label="Spectrum analyzer" role="img">
         <div className="soundbar-header">
           <span className="soundbar-label">SPECTRUM</span>
-          <span className="soundbar-mode">{modeLabel}</span>
+          <span className={modeClass}>{modeLabel}</span>
           <span className="soundbar-vol">VOL {Math.round(volume * 100)}</span>
         </div>
         <div className="soundbar-scale">
