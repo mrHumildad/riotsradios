@@ -1,5 +1,11 @@
 # riotsradios
 
+## 1.2.0
+
+### Minor Changes
+
+- 71803b0: added many radios
+
 ## 1.1.0
 
 ### Minor Changes
