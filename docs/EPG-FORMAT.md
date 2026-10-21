@@ -104,7 +104,9 @@ Use 24-hour format with leading zeros:
 
 ## File Naming
 
-Save as `public/EPGs/{station_id}.json` (e.g., `1.json` for station 1).
+Save the file in `public/EPGs/` using a descriptive name (e.g., `radio-ejemplo.json`), then put that file name in the station's `epg_file` column in `stations.csv` (e.g., `99,Radio Ejemplo,...,radio-ejemplo.json`).
+
+The player only loads an EPG for stations that have `epg_file` set; a station without it simply shows no EPG.
 
 ## Quick Example
 

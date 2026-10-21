@@ -101,8 +101,8 @@ export function useRadioLogic() {
 
   useEffect(() => {
     stations.forEach(s => {
-      if (!s.id) return
-      fetch(`${import.meta.env.BASE_URL}EPGs/${s.id}.json`)
+      if (!s.id || !s.epg_file) return
+      fetch(`${import.meta.env.BASE_URL}EPGs/${s.epg_file}`)
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(json => setEpgData(prev => new Map(prev).set(s.id, json)))
         .catch(() => {})
