@@ -31,6 +31,7 @@ Quick summary:
 - Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required
 - Define unique shows once in the `shows` catalog and reference them by `show_id` in daily grids
 - Copy `public/EPGs/template.json` and fill in your schedule
+- Name the file descriptively (e.g. `radio-topo.json`) and point the station's `epg_file` column in `stations.csv` at it
 - Validate at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) with schema `public/EPGs/epg-schema.json`
 - Send the completed file or open a PR
 

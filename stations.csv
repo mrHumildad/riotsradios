@@ -1,7 +1,7 @@
-id,name,stream_broken,has_ads,location,webpage,url,icon,description,epg,mailto
-1,Radio Contrabanda,,,"Barri Gotic, Barcelona",https://www.contrabanda.org/,https://radiobot.radioslibres.info/listen/contrabanda_fm/radio.mp3,https://www.contrabanda.org/wp-content/uploads/2021/01/cropped-miniatura_CBFM_2-32x32.png,,,contrabanda@contrabanda.org
+id,name,stream_broken,has_ads,location,webpage,url,icon,epg_url,epg_file,mailto
+1,Radio Contrabanda,,,"Barri Gotic, Barcelona",https://www.contrabanda.org/,https://radiobot.radioslibres.info/listen/contrabanda_fm/radio.mp3,https://www.contrabanda.org/wp-content/uploads/2021/01/cropped-miniatura_CBFM_2-32x32.png,,1.json,contrabanda@contrabanda.org
 2,Radio Arrebato,,,"Guadalajara, Spain",https://www.radioarrebato.net/,https://radioarrebato-seo.nabario.deno.net/api/live8,https://pbs.twimg.com/profile_images/1972705258380959744/pczIzr5G_400x400.jpg,,,
-3,Radio Ciroma,,,"Cosenza, Calabria",https://ciroma.org/,https://s.streampunk.cc/ciroma.mp3,https://ciroma.org/images/ciroma_small.png,,,
+3,Radio Ciroma,,,"Cosenza, Calabria",https://ciroma.org/,https://s.streampunk.cc/ciroma.mp3,https://ciroma.org/images/ciroma_small.png,,ciroma.json,
 4,Eguzki Irratia,,,"Pamplona, Basque Country",https://eguzki.eus/,https://streaming.eguzki.eus/eguzki.mp3,https://eguzki.eus/wp-content/themes/eguzki/images/logo.png,,,
 5,Radio Città Fujiko,,,"Bologna, Emilia",https://www.radiocittafujiko.it/,https://streaming.radiocittafujiko.it:8000/rcf.ogg,https://pbs.twimg.com/profile_images/345880108/piccolocpmeadesivo.gif_reasonably_small.gif,,,
 6,Radio Bip,,,"Besançon, France",https://radiobip.fr/site/,https://radiobip.fr/web?,https://radiobip.fr/site/wp-content/uploads/2016/04/logo-2.png,,,
@@ -16,7 +16,7 @@ id,name,stream_broken,has_ads,location,webpage,url,icon,description,epg,mailto
 15,Ké Huelga Radio,true,,México,https://kehuelga.net/,http://kehuelga.net:8000/radio.mp3,https://upload.wikimedia.org/wikipedia/commons/7/79/Ke_Huelga_Radio.png,,,kehuelga@kehuelga.net
 16,Ràdio Klara,,,Valencia (España),https://radioklara.org/,https://cervera.eldialdigital.com:21111/stream,https://pbs.twimg.com/profile_images/1187485621/logok_400x400.png,,,
 17,Radio Libertaire,true,,París (Francia),https://radio-libertaire.org/,http://media.radio-libertaire.org:8080/radiolib.mp3,https://radio-libertaire.org/images/bandRL.jpg,,,
-18,Radio Topo,,,Zaragoza (España),https://radiotopo.org/,https://radiobot.radioslibres.info/listen/radio_topo/radio96.mp3,https://www.radiotopo.org/wp-content/uploads/2024/05/logo-radio-topo-1.png,,,
+18,Radio Topo,,,Zaragoza (España),https://radiotopo.org/,https://radiobot.radioslibres.info/listen/radio_topo/radio96.mp3,https://www.radiotopo.org/wp-content/uploads/2024/05/logo-radio-topo-1.png,,topo.json,
 19,Radio Vallekas,,,Madrid (España),https://radiovallekas.org/,https://radio.radiobot.org/listen/rvk/rvk.mp3,https://www.radiovallekas.org/wp-content/uploads/2020/11/indice.png,,,
 20,Radio Utopía,true,,San Sebastián de los Reyes (España),https://radioutopia.org.es/,http://streaming.radioutopia.es:8000/radio-utopia.mp3,https://www.radioutopia.org.es/wp-content/uploads/2024/12/cropped-Radio-Utopia-150x150.png,,,
 21,Radio Carcoma,,,Madrid (España),https://www.radiocarcoma.com/,https://live.radiocarcoma.com/main,https://www.radiocarcoma.com/wp-content/uploads/logo_Small.jpg,,,
@@ -32,7 +32,7 @@ id,name,stream_broken,has_ads,location,webpage,url,icon,description,epg,mailto
 34,Radioliberada,true,,San Cristóbal (República Bolivariana de Venezuela),https://radioliberada.org.ve,,,,,radioliberadapodcast2@gmail.com
 35,Noticias de abajo,true,,Ciudad de Mexico (Mexico),http://laboratoriodemedios.org,espora.org:8000/laboratorio,,,,noticiasdeabajoml@riseup.net
 38,Aconchego,,,Recife (Brasil),https://radioaconchego.milharal.org,https://orelha.radiolivre.org/aconchego,https://mapadamidiape.marcozero.org/wp-content/uploads/2022/02/logo-radio-aconchego-292x300.jpg,,,radioaconchego@riseup.net
-42,Radio Encuentro,true,true,Luján (Argentina),https://www.radioencuentro.com.ar,http://192.99.46.171:10052/stream.mp3,https://radioencuentro.com.ar/wp-content/uploads/2022/01/cropped-instagram-1080px.png,youtube,,consultas@radioencuentro.com.ar
+42,Radio Encuentro,true,true,Luján (Argentina),https://www.radioencuentro.com.ar,http://192.99.46.171:10052/stream.mp3,https://radioencuentro.com.ar/wp-content/uploads/2022/01/cropped-instagram-1080px.png,,,consultas@radioencuentro.com.ar
 43,Radio Universitaria,,,León (España),http://radiouniversitaria.com/,https://radio.unileon.es/radio-unileon-320,https://pbs.twimg.com/profile_images/1909217191758630912/DuNDNVGL_400x400.jpg,,,eloy.garcia.pca@gmail.com
 45,Radio Roja,,,Casa Grande (Argentina),http://www.radioroja.com.ar,"https://orelha.radiolivre.org/radioroja.mp3
 ",https://radioroja.com.ar/wp-content/uploads/2025/11/cropped-radio_roja_transparent-e1776713742951.png,,,informes@radioroja.com.ar
