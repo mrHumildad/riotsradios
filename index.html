@@ -13,11 +13,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="manifest" href="/icons/site.webmanifest">
+    <link rel="preload" as="image" href="%BASE_URL%splash-logo.png" fetchpriority="high">
+    <style>html, body { background: #000; }</style>
   </head>
   <body>
-    <div id="splash">
-      <img src="/logo_flicker_loop.gif" alt="RIOTSRADIOS" class="splash-gif" />
-    </div>
     <div id="root"></div>
     <script type="module" src="/main.jsx"></script>
   </body>
