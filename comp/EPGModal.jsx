@@ -36,7 +36,13 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
 
   return (
     <div className="epg-modal-overlay" onClick={onClose}>
-      <div className="epg-modal" onClick={e => e.stopPropagation()}>
+      <div
+        className="epg-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${station.name} programme guide`}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="epg-modal-header">
           <div className="epg-modal-station">
             {station.icon && (
@@ -44,7 +50,7 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
             )}
             <span className="epg-modal-name">{station.name}</span>
           </div>
-          <button className="epg-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="epg-modal-close" onClick={onClose} aria-label="Close" autoFocus>✕</button>
         </div>
 
         <div className="epg-modal-day-nav">
@@ -53,7 +59,7 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
           <button className="epg-day-btn" onClick={goNextDay} disabled={!canGoNext} aria-label="Next day">▶</button>
         </div>
 
-        {daySchedule && daySchedule.isToday && dayOffset !== 0 && (
+        {dayOffset !== 0 && (
           <button className="epg-today-btn" onClick={goToday}>TODAY</button>
         )}
 

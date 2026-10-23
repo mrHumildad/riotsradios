@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
+import { healthBadge } from '../lib/health.js'
 
 function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, hasEpg, onOpenEpg }) {
   const [showEpgName, setShowEpgName] = useState(false)
+  const badge = healthBadge(station.health)
 
   useEffect(() => {
     if (!currentShow) {
@@ -20,8 +22,17 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
   return (
     <div
       id={`station-${index}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`${station.name || '(unlisted)'}${isActive ? ', playing' : ''}`}
       className={`station-item${isActive ? ' playing' : ''}${isSelected && !isActive ? ' selected' : ''}`}
       onClick={() => onSelect(index)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault()
+          onSelect(index)
+        }
+      }}
     >
       <div className="station-num">{String(index + 1).padStart(2, '0')}</div>
 
@@ -30,6 +41,10 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
           <img
             src={station.icon}
             alt=""
+            width="34"
+            height="34"
+            loading="lazy"
+            decoding="async"
             className="station-icon"
             onError={(e) => { e.target.style.display = 'none' }}
           />
@@ -45,6 +60,9 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
             )}
           </div>
           {station.location && <div className="station-location-line">{station.location}</div>}
+          {badge && badge.tone !== 'ok' && (
+            <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
+          )}
         </div>
       </div>
 

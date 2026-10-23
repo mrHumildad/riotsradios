@@ -675,12 +675,31 @@ body::after {
   padding: 0 2px;
 }
 
+.soundbar-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .soundbar-label {
   font-size: 0.5rem;
   letter-spacing: .35em;
   text-transform: uppercase;
   color: var(--warm-gray);
   font-weight: 400;
+}
+
+/* Honesty marker: these bars are synthetic until the real analyzer lands. */
+.sim-badge {
+  font-size: 0.4rem;
+  letter-spacing: .18em;
+  font-weight: 700;
+  padding: 0 4px;
+  border: 1px solid var(--amber-dim);
+  border-radius: 2px;
+  background: #1a1a14;
+  color: var(--amber-dim);
+  opacity: .85;
 }
 
 .soundbar-mode {
@@ -742,6 +761,12 @@ body::after {
 }
 
 /* ── the bars grid ── */
+.soundbar-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .soundbar-bars {
   display: flex;
   align-items: flex-end;
@@ -1263,6 +1288,29 @@ input[type="range"]::-moz-range-track {
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
+}
+
+/* Health badge (from the last probe snapshot) */
+.health-badge {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.42rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0 4px;
+  border: 1px solid;
+  border-radius: 2px;
+}
+
+.health-badge.warn {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.health-badge.bad {
+  color: var(--crimson);
+  border-color: var(--crimson-dim);
 }
 
 /* Station icon — restore original style */
@@ -1895,34 +1943,43 @@ input[type="range"]::-moz-range-track {
   animation: screen-flicker 18s 1 step-start infinite;
 }
 
-/* ---- SPLASH SCREEN ---- */
-#splash {
+/* ---- SPLASH SCREEN (comp/SplashScreen.jsx) ----
+   Brand emblem for ~1.4 s; the component drives the fade and removes itself. */
+.splash-screen {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  background: #0a0a0a;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: splash-out 5s linear forwards;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  opacity: 1;
+  transition: opacity .32s linear;
 }
 
-#splash .splash-gif {
-  width: min(300px, 80vw);
-  height: auto;
-  max-width: 80vw;
+.splash-screen.is-fading { opacity: 0; }
+
+.splash-logo {
   display: block;
+  width: min(72vw, 300px);
+  height: auto;
+  /* the artwork is on black, matching the splash backdrop */
+  animation: splash-flicker .45s steps(2, end) 2;
 }
 
-@keyframes splash-out {
-  0%, 88% {
-    opacity: 1;
-    visibility: visible;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
+@keyframes splash-flicker {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+@media (min-width: 1200px) {
+  .splash-logo { width: min(38vw, 460px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen { transition-duration: .12s; }
+  .splash-logo { animation: none; }
 }
 
 /* ---- Dev strip border labels (de-coded style) ---- */
@@ -1953,3 +2010,66 @@ input[type="range"]::-moz-range-track {
    .header-brand.reduced-motion .header-brand-t{opacity:1!important;transform:none!important;max-width:none!important}
    .header-brand.reduced-motion .visually-hidden{display:none}
  }
+
+/* ---- Keyboard / D-pad focus ---- */
+.station-item:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* ---- 10-foot / large screens ----
+   Mobile keeps the original flex column via display: contents; wide screens
+   switch to a two-column player + channel list with safe-area padding. */
+.main-columns { display: contents; }
+
+@media (min-width: 1200px) {
+  #root { max-width: 1360px; }
+
+  .container {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+    padding-left: max(clamp(24px, 3vw, 64px), env(safe-area-inset-left));
+    padding-right: max(clamp(24px, 3vw, 64px), env(safe-area-inset-right));
+  }
+
+  .main-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
+    gap: clamp(20px, 2vw, 44px);
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .main-columns > * { min-width: 0; }
+  .main-columns > .player-dashboard { min-height: 0; }
+
+  .station-list-wrapper { flex: 1 1 auto; min-height: 0; }
+  .station-list-inner { flex: 1 1 auto; }
+
+  .station-item { min-height: 62px; }
+  .station-name-line { font-size: 1.02rem; }
+  .station-location-line { font-size: 0.78rem; }
+  .soundbar-bars { height: clamp(70px, 16vh, 170px); }
+  .crt-display { font-size: clamp(1.1rem, 1.5vw, 1.7rem); }
+  .station-item:focus-visible { outline-width: 3px; outline-offset: 3px; }
+}
+
+@media (min-width: 1920px) {
+  #root { max-width: 1680px; }
+  .main-columns {
+    grid-template-columns: minmax(0, 1.3fr) minmax(470px, 0.7fr);
+    gap: 48px;
+  }
+  .station-item { min-height: 74px; }
+  .station-name-line { font-size: 1.18rem; }
+  .station-location-line { font-size: 0.9rem; }
+  .soundbar-bars { height: clamp(90px, 18vh, 220px); }
+}
+
+@media (min-width: 2560px) {
+  #root { max-width: 2100px; }
+  .station-item { min-height: 88px; }
+  .station-name-line { font-size: 1.35rem; }
+  .station-location-line { font-size: 1rem; }
+}

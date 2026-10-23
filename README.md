@@ -7,6 +7,8 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 - Stream 30+ community radio stations from around the world
 - Retro-futuristic "post-punk" interface with amber CRT aesthetics
 - Station list with live playback controls
+- Real audio spectrum where the station allows CORS, with a clearly labelled `SIM` fallback otherwise
+- Large-screen / Android TV layout (safe areas, two columns, D-pad focus)
 
 ## Keyboard & Remote Controls (Android TV / TV browsers)
 
@@ -71,6 +73,16 @@ Available stations include:
 - **Radio Città Fujiko** (Bologna, Italy)
 - **Radio Ciroma** (Cosenza, Italy)
 
+## Station Catalog
+
+`stations.csv` is the single source of truth for stations. Validate it before sending a PR:
+
+```bash
+npm run validate:stations
+```
+
+It rejects malformed rows (invalid/blank IDs, duplicate IDs or stream URLs, non-`http(s)` URLs, broken `epg_file` references) and runs automatically before every build, so a bad row cannot ship. An **active** station must use `https://`: browsers block `http://` audio on the HTTPS deployment, so add an HTTPS mirror or route the stream through the relay before enabling it. Broken (`stream_broken`) rows are only warned about, since they are already hidden.
+
 ## Development
 
 ```bash
@@ -83,6 +95,27 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Stream Health
+
+Every station is probed on a schedule; the result is bundled so the list can label what is actually working:
+
+```bash
+npm run probe:health
+```
+
+- Writes `data/health.json` (status, HTTP code, content type, CORS capability, latency, consecutive failures).
+- The app shows `UNSTABLE` after a failed check, `OFFLINE` after three in a row, and `HTTP ONLY` for streams browsers block on HTTPS. `LIVE` is implicit.
+- `.github/workflows/health.yml` refreshes the snapshot daily and commits it; `.github/workflows/ci.yml` runs tests, catalog/EPG validation and the build on every push and PR.
+- `cors` in the snapshot is what a future real audio analyzer needs: `any`/`origin` can be analyzed, `null` cannot.
+
+## Tests
+
+```bash
+npm test
+```
+
+Covers the playback state machine (start timeout, stall detection, retry/backoff, clean stop, error mapping) with a fake audio element. Catalog rules are checked by `npm run validate:stations`, which also runs before every build.
 
 ## Deploy
 

@@ -8,8 +8,10 @@ import EPGModal from './comp/EPGModal.jsx'
 import { version } from './package.json'
 function App() {
 const {
-    audioRef,
+    spectrumRef,
+    canAnalyze,
     currentStationIndex,
+    playbackState,
     isPlaying,
     volume,
     stationHasError,
@@ -23,7 +25,6 @@ const {
     nextStation,
     prevStation
   } = useRadioLogic();
-   console.log('App render:', { currentStationIndex, isPlaying, volume, stationHasError, streamError })
   const [epgModalStation, setEpgModalStation] = useState(null)
   const [brandState, setBrandState] = useState('riots')
   const [brandWord, setBrandWord] = useState('RIOTS')
@@ -59,6 +60,9 @@ const {
         if (isEsc(e)) { setEpgModalStation(null); e.preventDefault(); }
         return;
       }
+      /* Never hijack keys from a focused control (slider, link, row button). */
+      const target = e.target
+      if (target instanceof Element && target.closest('input, textarea, select, a, button, [role="button"], [contenteditable="true"]')) return
       if (isLeft(e)) { prevStation(); e.preventDefault(); return; }
       if (isRight(e)) { nextStation(); e.preventDefault(); return; }
       if (isUp(e)) { changeVolume(Math.min(1, volume+0.05)); e.preventDefault(); return; }
@@ -170,11 +174,14 @@ const {
         </button>
       </header>
 
-<PlayerDashboard
-         audioRef={audioRef}
+<div className="main-columns">
+
+      <PlayerDashboard
+         spectrumRef={spectrumRef}
+         canAnalyze={canAnalyze}
          currentStationName={currentStationName}
          currentStationIndex={currentStationIndex}
-         isPlaying={isPlaying}
+         playbackState={playbackState}
          volume={volume}
          currentShow={currentShow}
          stationHasError={stationHasError}
@@ -194,6 +201,8 @@ const {
         currentShows={currentShows}
         onOpenEpg={setEpgModalStation}
       />
+
+      </div>
 
       <div className="chassis-footer" aria-hidden="true">
         <span className="footer-sig footer-logo footer-version">v{version}</span>

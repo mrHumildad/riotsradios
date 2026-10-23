@@ -1,111 +1,40 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-
-/* ─────────────────────────────────────────────────
-   useAudioBars
-   Purely cosmetic spectrum ticker that reacts to
-   isPlaying, volume and stationIndex, but never
-   touches the Web Audio API or the <audio> element.
-   Cannot break audio playback under any condition.
-   ───────────────────────────────────────────────── */
-function useAudioBars(isPlaying, volume, stationIndex) {
-  const [bars, setBars] = useState(Array(24).fill(0))
-
-  /* mutable slots — updated on every render, read inside rAF
-     without causing the effect to re-subscribe */
-  const volRef    = useRef(volume)
-  const stallRef  = useRef(0)     /* frames since last update */
-  const rafIdRef  = useRef(null)
-  const running   = useRef(false)
-  const phaseRef  = useRef(0)
-  const idxRef    = useRef(stationIndex)
-  const seedRef   = useRef((stationIndex + 1) * 0.31)
-
-  /* keep refs in sync without re-running the effect */
-  useEffect(() => { volRef.current =  volume },        [volume])
-  useEffect(() => { idxRef.current  =  stationIndex
-                     seedRef.current = (stationIndex + 1) * 0.31 }, [stationIndex])
-
-  /* ── per-frame update ──────────────────────── */
-  const step = useCallback(() => {
-    if (!running.current) return
-    phaseRef.current += 0.072
-
-    const v         = volRef.current
-    const seed      = seedRef.current
-    const wave      = phaseRef.current
-    const next      = Array.from({ length: 24 }, (_, i) => {
-      /* pseudo-random, station-specific, bass-biased envelope */
-      const noise  = ((i * 27182.718) % 1)
-      const foo    = (noise + wave * 0.00314 + seed) % 1
-      const shape  = Math.exp(-(i / 23) * 1.5)
-      return Math.max(0, (foo * 0.25 + shape * 0.75) * v)
-    })
-
-    /* ramp toward the target value — smooth, never snaps */
-    setBars(prev => prev.map((val, i) => val + (next[i] - val) * 0.30))
-    rafIdRef.current = requestAnimationFrame(step)
-  }, [])
-
-  /* ── subscribe / unsubscribe ──────────────── */
-  useEffect(() => {
-    if (!isPlaying) {
-      running.current = false
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current)
-      rafIdRef.current = null
-      setBars(Array(24).fill(0))
-      return
-    }
-    if (!running.current) {
-      running.current = true
-      rafIdRef.current = requestAnimationFrame(step)
-    }
-    return () => { running.current = false }
-  }, [isPlaying, step])
-
-  return bars
-}
-
-/* ─────────────────────────────────────────────────
-   SoundBar — one 12-segment LED EQ column
-   ───────────────────────────────────────────────── */
-function SoundBar({ level, index, total }) {
-  const pct     = Math.round(level * 100)
-  const band    = index / (total - 1)
-  const isBass  = band < 0.25
-  const isLoud  = level > 0.55
-
-  const segments = 12
-  const litCount = Math.round(level * segments)
-
-  return (
-    <div className="sound-bar" role="meter" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
-      {Array.from({ length: segments }, (_, i) => {
-        const lit    = i < litCount
-        const segIdx = segments - 1 - i
-        let segClass = 'seg-off'
-        if (lit) {
-          if      (segIdx >= 10) segClass = isLoud ? 'seg-hot'   : 'seg-warm'
-          else if (segIdx >= 7)  segClass = isLoud ? 'seg-hot'   : 'seg-warm'
-          else if (segIdx >= 4)  segClass = isLoud ? 'seg-warm'  : 'seg-mid'
-          else                   segClass = isLoud ? 'seg-mid'   : isBass ? 'seg-bass' : 'seg-base'
-        }
-        return <div key={i} className={`bar-seg ${segClass}`} />
-      })}
-    </div>
-  )
-}
+import React, { useState, useEffect } from 'react'
+import { useSpectrum } from './useSpectrum.js'
 
 /* ─────────────────────────────────────────────────
    PlayerDashboard
    ───────────────────────────────────────────────── */
-function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
-                            isPlaying, volume, currentShow, stationHasError, streamError,
-                            onTogglePlay, onChangeVolume,
-                            onPrevStation, onNextStation }) {
-  const bars      = useAudioBars(isPlaying, volume, currentStationIndex)
+function PlayerDashboard({
+  currentStationName, currentStationIndex, playbackState, canAnalyze,
+  volume, currentShow, stationHasError, streamError, spectrumRef,
+  onTogglePlay, onChangeVolume, onPrevStation, onNextStation,
+}) {
   const isIdle    = currentStationIndex === null
-  const modeLabel = isIdle ? 'IDLE' : isPlaying ? 'LIVE' : streamError ? 'ERROR' : 'STOPPED'
-  const modeClass = streamError ? 'soundbar-mode error-state' : 'soundbar-mode'
+  const hasError  = stationHasError || Boolean(streamError)
+  /* Only animate while audio is actually live; otherwise the canvas freezes. */
+  const isLive    = playbackState === 'playing' && !hasError
+  const isActive  = playbackState === 'loading' || playbackState === 'playing' || playbackState === 'stalled'
+
+  const { canvasRef, mode: spectrumMode } = useSpectrum({
+    spectrumRef,
+    canAnalyze,
+    isLive,
+    stationIndex: currentStationIndex,
+    volume,
+  })
+
+  const modeLabel = isIdle
+    ? 'IDLE'
+    : hasError
+      ? 'ERROR'
+      : playbackState === 'loading'
+        ? 'TUNING'
+        : playbackState === 'stalled'
+          ? 'RECONNECTING'
+          : playbackState === 'playing'
+            ? 'LIVE'
+            : 'STOPPED'
+  const modeClass = hasError ? 'soundbar-mode error-state' : 'soundbar-mode'
 
   const [showEpgName, setShowEpgName] = useState(false)
 
@@ -135,9 +64,21 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
       </div>
 
 
-      <div className="soundbar-module" aria-label="Spectrum analyzer" role="img">
+      <div
+        className="soundbar-module"
+        aria-label={spectrumMode === 'sim' ? 'Spectrum analyzer (simulated)' : 'Spectrum analyzer'}
+        role="img"
+      >
         <div className="soundbar-header">
-          <span className="soundbar-label">SPECTRUM</span>
+          <span className="soundbar-label-group">
+            <span className="soundbar-label">SPECTRUM</span>
+            {spectrumMode === 'sim' && (
+              <span
+                className="sim-badge"
+                title="Visualization simulated — this station does not expose audio data to the browser"
+              >SIM</span>
+            )}
+          </span>
           <span className={modeClass}>{modeLabel}</span>
           <span className="soundbar-vol">VOL {Math.round(volume * 100)}</span>
         </div>
@@ -148,10 +89,8 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
           <span className="scale-tick">-12</span>
           <span className="scale-tick">-20</span>
         </div>
-        <div className={`soundbar-bars${isPlaying ? ' is-active' : ''}`}>
-          {bars.map((level, i) => (
-            <SoundBar key={i} level={level} index={i} total={bars.length} />
-          ))}
+        <div className={`soundbar-bars${isLive ? ' is-active' : ''}`}>
+          <canvas ref={canvasRef} className="soundbar-canvas" aria-hidden="true" />
         </div>
         <div className="soundbar-footer">
           <span className="freq-band">20</span>
@@ -182,12 +121,12 @@ function PlayerDashboard({ audioRef, currentStationName, currentStationIndex,
 
             <button
               id="play-pause-btn"
-              className={`push-btn play-btn${isPlaying ? ' is-playing' : ''}`}
+              className={`push-btn play-btn${isActive ? ' is-playing' : ''}`}
               onClick={onTogglePlay}
               disabled={isIdle}
-              aria-label={isIdle ? 'Play (select a station first)' : isPlaying ? 'Stop' : 'Play'}
+              aria-label={isIdle ? 'Play (select a station first)' : isActive ? 'Stop' : 'Play'}
             >
-              {isPlaying
+              {isActive
                 ? <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
                     <rect x="3" y="3" width="10" height="10" rx="1"/>
                   </svg>

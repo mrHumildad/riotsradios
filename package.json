@@ -7,11 +7,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run validate:stations",
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "validate:epg": "node scripts/validate-epgs.js",
+    "validate:stations": "node scripts/validate-stations.js",
+    "test": "node --test tests/*.test.mjs",
+    "probe:health": "node scripts/probe-stations.js",
     "changeset": "changeset",
     "release": "npx changeset version && npm run deploy && git push --follow-tags && git push origin main"
   },

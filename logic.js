@@ -1,83 +1,24 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { stations } from './stations.js'
+import { createPlaybackController } from './lib/playbackController.js'
+import { createSpectrumAnalyzer } from './lib/spectrumAnalyzer.js'
+import { getCurrentShow as computeCurrentShow, getDaySchedule as computeDaySchedule } from './lib/epg.js'
 
-const DAY_MAP = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
-
-function normalizeProgram(prog, shows = {}) {
-  const getMinutes = (t) => {
-    const [h, m] = t.split(':').map(Number)
-    return h * 60 + m
-  }
-  let normalized = { ...prog }
-  if (prog.end) {
-    normalized.startMin = getMinutes(prog.start)
-    normalized.endMin = prog.crosses_midnight ? 24 * 60 : getMinutes(prog.end)
-    normalized.durationMin = normalized.endMin - normalized.startMin
-  } else {
-    const [ph, pm] = prog.start.split(':').map(Number)
-    normalized.startMin = ph * 60 + pm
-    const blockUnit = 30
-    normalized.endMin = normalized.startMin + (prog.duration_blocks || 1) * blockUnit
-    normalized.durationMin = normalized.endMin - normalized.startMin
-  }
-  if (prog.show_id && shows[prog.show_id]) {
-    const show = shows[prog.show_id]
-    normalized.title = normalized.title || show.title
-    normalized.category = normalized.category || show.category
-    normalized.url = normalized.url || show.url
-    normalized.description = normalized.description || show.description
-    normalized.hosts = normalized.hosts || show.hosts
-    normalized.recurrence_note = normalized.recurrence_note || show.recurrence_note
-  }
-  return normalized
-}
-
-function getCurrentShow(epg) {
-  if (!epg || !epg.days) return null
-  const tz = epg.timezone || 'UTC'
-  const now = new Date()
-
-  const dayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(now).toLowerCase()
-  const resolvedDay = DAY_MAP.includes(dayStr) ? dayStr : null
-
-  const dayEntry = epg.days.find(d => d.day === resolvedDay)
-  if (!dayEntry) return null
-
-  const timeStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(now)
-  const [h, m] = timeStr.split(':').map(Number)
-  const nowMinutes = h * 60 + m
-
-  const shows = epg.shows || {}
-  for (const prog of dayEntry.programs) {
-    const p = normalizeProgram(prog, shows)
-    if (nowMinutes >= p.startMin && nowMinutes < p.endMin) {
-      return { title: p.title, category: p.category, live: !!p.live }
-    }
-  }
-
-  const gapsTitle = epg.metadata?.default_filler?.title || epg.gaps
-  const gapsCategory = epg.metadata?.default_filler?.category || 'musica'
-  if (gapsTitle) {
-    const sorted = [...dayEntry.programs].map(p => normalizeProgram(p, shows)).sort((a, b) => a.startMin - b.startMin)
-    const firstStart = sorted[0].startMin
-    const lastEnd = sorted[sorted.length - 1].endMin
-    if (nowMinutes >= firstStart && nowMinutes < lastEnd) {
-      return { title: gapsTitle, category: gapsCategory, live: false, isGap: true }
-    }
-  }
-
-  return null
+/** Web Audio can only read audio from stations whose health snapshot reports CORS. */
+function supportsAnalyzer(health) {
+  return Boolean(health && (health.cors === 'any' || health.cors === 'origin'))
 }
 
 export function useRadioLogic() {
-  const audioRef = useRef(new Audio())
-  const currentStreamUrlRef = useRef('')
+  const audioRef = useRef(null)
+  const controllerRef = useRef(null)
+  const spectrumRef = useRef(null)
+  const currentIndexRef = useRef(0)
+  const volumeRef = useRef(0.8)
+
   const [currentStationIndex, setCurrentStationIndex] = useState(0)
+  const [playbackState, setPlaybackState] = useState('idle')   /* idle | loading | playing | stalled | error */
+  const [canAnalyze, setCanAnalyze] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [stationHasError, setStationHasError] = useState(false)
@@ -85,18 +26,72 @@ export function useRadioLogic() {
   const [epgData, setEpgData] = useState(new Map())
   const [timeTick, setTimeTick] = useState(0)
 
+  const applyState = useCallback((next) => {
+    setPlaybackState(next)
+    setIsPlaying(next === 'playing')
+    setStationHasError(next === 'error')
+  }, [])
+
+  /* Must run inside a user gesture: creating an AudioContext elsewhere leaves
+     it suspended. Once connected, volume moves to the GainNode. */
+  const ensureSpectrum = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return false
+    if (!spectrumRef.current) spectrumRef.current = createSpectrumAnalyzer({ audio })
+    const connected = spectrumRef.current.ensure()
+    if (connected) {
+      audio.volume = 1
+      spectrumRef.current.setVolume(volumeRef.current)
+    }
+    return connected
+  }, [])
+
   useEffect(() => {
     const id = setInterval(() => setTimeTick(t => t + 1), 60000)
     return () => clearInterval(id)
   }, [])
 
+  /* One audio element per app instance, created after mount (never during
+     render) and driven by the playback state machine. */
   useEffect(() => {
-    const audio = audioRef.current
+    const audio = new Audio()
+    audio.preload = 'none'
+    audio.volume = volumeRef.current
+    audioRef.current = audio
+
+    const controller = createPlaybackController({
+      audio,
+      isMixedContent: (url) =>
+        typeof window !== 'undefined' &&
+        window.location.protocol === 'https:' &&
+        typeof url === 'string' &&
+        url.startsWith('http://'),
+      onState: applyState,
+      onStreamError: setStreamError,
+    })
+    controllerRef.current = controller
+
     return () => {
-      audio.pause()
-      audio.src = ''
-      currentStreamUrlRef.current = ''
+      controller.destroy()
+      controllerRef.current = null
+      spectrumRef.current?.close()
+      spectrumRef.current = null
+      audioRef.current = null
     }
+  }, [applyState])
+
+  /* When connectivity returns, retry a stream that gave up. */
+  useEffect(() => {
+    const onOnline = () => {
+      const controller = controllerRef.current
+      if (!controller) return
+      const state = controller.getState()
+      if (state !== 'error' && state !== 'stalled') return
+      const station = stations[currentIndexRef.current]
+      if (station) controller.play(station.url, { isRetry: true })
+    }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
   }, [])
 
   useEffect(() => {
@@ -110,202 +105,63 @@ export function useRadioLogic() {
   }, [])
 
   const currentShows = useMemo(() => {
+    const now = new Date()
     const shows = new Map()
     epgData.forEach((epg, stationId) => {
-      const show = getCurrentShow(epg)
-      shows.set(stationId, show)
+      shows.set(stationId, computeCurrentShow(epg, now))
     })
     return shows
   }, [epgData, timeTick])
 
   const getDaySchedule = useCallback((stationId, dayOffset) => {
     const epg = epgData.get(stationId)
-    if (!epg || !epg.days) return null
-    const tz = epg.timezone || 'UTC'
-    const now = new Date()
-    const dayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(now).toLowerCase()
-    const epgDayNames = epg.days.map(d => d.day)
-    const currentEpgIdx = epgDayNames.indexOf(dayStr)
-    const baseIdx = currentEpgIdx >= 0 ? currentEpgIdx : 0
-    const targetEpgIdx = baseIdx + dayOffset
-    if (targetEpgIdx < 0 || targetEpgIdx >= epgDayNames.length) return null
-    const targetDay = epgDayNames[targetEpgIdx]
-    const dayEntry = epg.days.find(d => d.day === targetDay)
-    if (!dayEntry) return null
-
-    const nowMinutes = (() => {
-      const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(now)
-      const [h, m] = timeStr.split(':').map(Number)
-      return h * 60 + m
-    })()
-    const isToday = dayOffset === 0 && currentEpgIdx >= 0
-    const shows = epg.shows || {}
-    const gapsTitle = epg.metadata?.default_filler?.title || epg.gaps
-    const gapsCategory = epg.metadata?.default_filler?.category || 'musica'
-
-    const sorted = [...dayEntry.programs].map(p => normalizeProgram(p, shows)).sort((a, b) => a.startMin - b.startMin)
-    const programs = []
-    for (let i = 0; i < sorted.length; i++) {
-      const p = sorted[i]
-      if (gapsTitle && programs.length > 0) {
-        const prevEnd = programs[programs.length - 1].endMin
-        if (p.startMin > prevEnd) {
-          programs.push({
-            start: String(Math.floor(prevEnd / 60)).padStart(2, '0') + ':' + String(prevEnd % 60).padStart(2, '0'),
-            title: gapsTitle,
-            category: gapsCategory,
-            live: false,
-            durationMin: p.startMin - prevEnd,
-            startMin: prevEnd,
-            endMin: p.startMin,
-            isGap: true,
-            isCurrent: isToday && nowMinutes >= prevEnd && nowMinutes < p.startMin,
-            isPast: isToday && nowMinutes >= p.startMin
-          })
-        }
-      }
-      programs.push({
-        ...p,
-        isCurrent: isToday && nowMinutes >= p.startMin && nowMinutes < p.endMin,
-        isPast: isToday && nowMinutes >= p.endMin
-      })
-    }
-    return {
-      label: dayEntry.label || dayEntry.day,
-      programs,
-      isToday
-    }
+    if (!epg) return null
+    return computeDaySchedule(epg, dayOffset)
   }, [epgData])
 
   const selectStation = useCallback((index) => {
-    const audio = audioRef.current
+    if (!Number.isInteger(index) || index < 0 || index >= stations.length) return
 
-    if (currentStationIndex === index && isPlaying) return
+    const controller = controllerRef.current
+    if (!controller) return
+    if (index === currentIndexRef.current && controller.getState() === 'playing') return
 
-    if (currentStationIndex !== null && currentStationIndex !== index) {
-      const prevId = `station-${currentStationIndex}`
-      const prevEl = document.getElementById(prevId)
+    if (currentIndexRef.current !== index) {
+      const prevEl = document.getElementById(`station-${currentIndexRef.current}`)
       if (prevEl) prevEl.classList.remove('playing')
     }
 
-    const station = stations[index]
-    
-    // Check for mixed content before attempting to play
-    const isHttpOnHttps = station.url.startsWith('http://') && 
-      (typeof window !== 'undefined' && window.location.protocol === 'https:')
-    
-    if (isHttpOnHttps) {
-      setStationHasError(true)
-      setStreamError('mixed-content')
-      setCurrentStationIndex(index)
-      console.warn('Mixed content blocked: HTTP stream on HTTPS page', station.url)
-      return
-    }
-    
-    setStationHasError(false)
-    setStreamError(null)
+    currentIndexRef.current = index
     setCurrentStationIndex(index)
 
-    audio.src = station.url
-    currentStreamUrlRef.current = station.url
-    audio.volume = volume
-    
-    // Listen for error events on the audio element
-    const handleError = (e) => {
-      console.error('Audio element error event:', e)
-      setStationHasError(true)
-      setStreamError('playback')
-    }
-    audio.addEventListener('error', handleError, { once: true })
-    
-    // Check if stream fails to load within 3 seconds (common for blocked streams)
-    const timeoutCheck = setTimeout(() => {
-      if (!audio.src || audio.error) {
-        console.warn('Stream failed to load check')
-      } else if (audio.networkState === 3) { // NETWORK_NO_SOURCE
-        setStationHasError(true)
-        setStreamError('playback')
-        console.warn('Stream network error (no source)')
-      }
-    }, 3000)
-    
-    audio.play()
-      .then(() => {
-        clearTimeout(timeoutCheck)
-        setIsPlaying(true)
-        setStationHasError(false)
-        setStreamError(null)
-      })
-      .catch((err) => {
-        clearTimeout(timeoutCheck)
-        const isMixedContent = err.name === 'SecurityError' || 
-          (err.message && (err.message.toLowerCase().includes('mixed') || 
-           err.message.toLowerCase().includes('https')))
-        if (isMixedContent) {
-          setStreamError('mixed-content')
-        } else {
-          setStreamError('playback')
-        }
-        setStationHasError(true)
-        console.error('Playback error:', err)
-      })
-  }, [currentStationIndex, isPlaying, volume])
+    const station = stations[index]
+    const cors = supportsAnalyzer(station.health)
+    setCanAnalyze(cors ? ensureSpectrum() : false)
+    controller.play(station.url, { cors })
+  }, [ensureSpectrum])
 
   const togglePlay = useCallback(() => {
-    if (currentStationIndex === null) return
+    const controller = controllerRef.current
+    const station = stations[currentIndexRef.current]
+    if (!controller || !station) return
 
-    const audio = audioRef.current
-    const station = stations[currentStationIndex]
-
-    if (isPlaying) {
-      audio.pause()
-      audio.src = ''
-      currentStreamUrlRef.current = ''
-      setIsPlaying(false)
+    const state = controller.getState()
+    /* While tuning or reconnecting the button cancels the attempt. */
+    if (state === 'playing' || state === 'loading' || state === 'stalled') {
+      controller.stop()
     } else {
-      // Check for mixed content before attempting to play
-      const isHttpOnHttps = station.url.startsWith('http://') && 
-        (typeof window !== 'undefined' && window.location.protocol === 'https:')
-      
-      if (isHttpOnHttps) {
-        setStationHasError(true)
-        setStreamError('mixed-content')
-        console.warn('Mixed content blocked: HTTP stream on HTTPS page', station.url)
-        return
-      }
-      
-      if (stationHasError || currentStreamUrlRef.current !== station.url) {
-        audio.src = station.url
-        currentStreamUrlRef.current = station.url
-        audio.volume = volume
-        setStationHasError(false)
-        setStreamError(null)
-      }
-      audio.play()
-        .then(() => {
-          setIsPlaying(true)
-          setStationHasError(false)
-          setStreamError(null)
-        })
-        .catch((err) => {
-          const isMixedContent = err.name === 'SecurityError' || 
-            (err.message && (err.message.toLowerCase().includes('mixed') || 
-             err.message.toLowerCase().includes('https')))
-          if (isMixedContent) {
-            setStreamError('mixed-content')
-          } else {
-            setStreamError('playback')
-          }
-          setStationHasError(true)
-          console.error('Play rejected:', err.name, err.message)
-        })
+      const cors = supportsAnalyzer(station.health)
+      setCanAnalyze(cors ? ensureSpectrum() : false)
+      controller.play(station.url, { cors })
     }
-  }, [currentStationIndex, isPlaying, stationHasError, volume, stations])
+  }, [ensureSpectrum])
 
   const changeVolume = useCallback((val) => {
     const vol = parseFloat(val)
+    volumeRef.current = vol
     setVolume(vol)
-    audioRef.current.volume = vol
+    if (spectrumRef.current?.isConnected()) spectrumRef.current.setVolume(vol)
+    else if (audioRef.current) audioRef.current.volume = vol
   }, [])
 
   const nextStation = useCallback(() => {
@@ -324,7 +180,10 @@ export function useRadioLogic() {
 
   return {
     audioRef,
+    spectrumRef,
+    canAnalyze,
     currentStationIndex,
+    playbackState,
     isPlaying,
     volume,
     stationHasError,
