@@ -20,14 +20,14 @@
     "last_ok_at": "2026-10-22T10:35:00.562Z"
   },
   "3": {
-    "status": "http_4xx",
+    "status": "cors_missing",
     "cors": null,
-    "http_code": 404,
-    "content_type": "text/html; charset=utf-8",
-    "latency_ms": 538,
-    "checked_at": "2026-10-22T10:35:00.342Z",
-    "consecutive_failures": 1,
-    "last_ok_at": null
+    "http_code": 200,
+    "content_type": "audio/mpeg",
+    "latency_ms": 912,
+    "checked_at": "2026-11-02T16:59:37.484Z",
+    "consecutive_failures": 0,
+    "last_ok_at": "2026-11-02T16:59:37.484Z"
   },
   "4": {
     "status": "ok",
@@ -230,14 +230,14 @@
     "last_ok_at": "2026-10-22T10:35:01.426Z"
   },
   "24": {
-    "status": "http_5xx",
-    "cors": null,
-    "http_code": 502,
-    "content_type": "text/html",
-    "latency_ms": 204,
-    "checked_at": "2026-10-22T10:35:01.412Z",
-    "consecutive_failures": 1,
-    "last_ok_at": null
+    "status": "ok",
+    "cors": "origin",
+    "http_code": 206,
+    "content_type": "audio/mpeg",
+    "latency_ms": 712,
+    "checked_at": "2026-11-02T16:59:37.484Z",
+    "consecutive_failures": 0,
+    "last_ok_at": "2026-11-02T16:59:37.484Z"
   },
   "25": {
     "status": "http_5xx",
@@ -340,14 +340,14 @@
     "last_ok_at": null
   },
   "46": {
-    "status": "http_4xx",
+    "status": "ok",
     "cors": "any",
-    "http_code": 404,
-    "content_type": "text/html; charset=utf-8",
-    "latency_ms": 441,
-    "checked_at": "2026-10-22T10:35:02.452Z",
-    "consecutive_failures": 1,
-    "last_ok_at": null
+    "http_code": 200,
+    "content_type": "audio/mpeg",
+    "latency_ms": 922,
+    "checked_at": "2026-11-02T16:59:37.484Z",
+    "consecutive_failures": 0,
+    "last_ok_at": "2026-11-02T16:59:37.484Z"
   },
   "50": {
     "status": "ok",

@@ -1,0 +1,12 @@
+can a playstore app has economic support outside google?
+Yes, a Google Play Store app can receive economic support or generate revenue outside of Google, though the rules depend on your region and how you direct users.
+
+1. External Web Links and Alternative Billing
+
+• In the European Economic Area (EEA), UK, US, and other expanding regions: Under Google's updated policies (and changes driven by regulations like the EU Digital Markets Act), developers can participate in programs like Google's External Offers Program or use alternative billing choices.
+• The Catch: You can guide users to an external website to complete a purchase or subscription, but Google still typically requires you to use specific disclosure screens, report transactions, and pay a reduced service fee or platform cut depending on the program and region.
+
+2. External Logins and Web-Based Subscriptions (Services like Netflix or Spotify)
+
+• You can sell subscriptions or memberships directly on your own website and let users log into their existing account inside the Android app.
+• The Restriction: Historically and under current policy, you cannot actively advertise, link to, or prompt users to buy external subscriptions directly inside the app interface (outside of specific approved external offer frameworks). Violating this can lead to policy strikes or app removal.

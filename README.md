@@ -83,6 +83,8 @@ npm run validate:stations
 
 It rejects malformed rows (invalid/blank IDs, duplicate IDs or stream URLs, non-`http(s)` URLs, broken `epg_file` references) and runs automatically before every build, so a bad row cannot ship. An **active** station must use `https://`: browsers block `http://` audio on the HTTPS deployment, so add an HTTPS mirror or route the stream through the relay before enabling it. Broken (`stream_broken`) rows are only warned about, since they are already hidden.
 
+A station with no HTTPS mirror at all can still be carried **in the Android app only**: add its host and id to `data/cleartext-hosts.json`, run `npm run cleartext:config` (regenerates the app's network security config from that list), then clear `stream_broken`. The validator accepts it as app-only and the GitHub Pages build keeps hiding it — see `docs/CORS-IN-APP.md`.
+
 ## Development
 
 ```bash

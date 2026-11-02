@@ -1,0 +1,24 @@
+{
+  "hosts": [
+    {
+      "host": "radiomalva.ddns.net",
+      "station_ids": [14],
+      "note": "Radio Malva (id 14) — no https mirror"
+    },
+    {
+      "host": "kehuelga.net",
+      "station_ids": [15],
+      "note": "Ké Huelga Radio (id 15) — no https mirror"
+    },
+    {
+      "host": "media.radio-libertaire.org",
+      "station_ids": [17],
+      "note": "Radio Libertaire (id 17) — no https mirror"
+    },
+    {
+      "host": "streaming.radioutopia.es",
+      "station_ids": [20],
+      "note": "Radio Utopía (id 20) — no https mirror"
+    }
+  ]
+}

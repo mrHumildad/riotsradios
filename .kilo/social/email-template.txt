@@ -1,0 +1,63 @@
+RIOTSRADIOS - Free community radio platform / Plataforma libre de radio comunitaria
+
+================================================================================
+
+Estimado/a equipo de {{station_name}}:
+
+Me llamo mrHumildad y estoy desarrollando RIOTSRADIOS, una plataforma libre y anticapitalista para escuchar emisoras comunitarias. Tu radio ya está incluida en el proyecto como punto de referencia para la comunidad radiopunk.
+
+DATOS ACTUALES (por favor verifique y corrija si es necesario):
+--------------------------------------------------------------
+Nombre:    {{station_name}}
+Ubicación: {{location}}
+Web:       {{webpage}}
+Stream:    {{url}}
+Icono:     {{icon}}
+
+¿Alguno de estos datos necesita actualización?
+
+TE INVITO A USAR EPG_MAKER:
+----------------------------
+He creado una herramienta sencilla para generar guías de programación. Los pasos son:
+
+1. Visita: https://{{epg_maker_url}}
+2. Completa la programación semanal (horarios, programas, presentadores)
+3. Descarga el archivo JSON
+4. Súbelo a tu web (ej: tuweb.org/epg.json)
+5. Envíame la URL para incluirla en RIOTSRADIOS
+
+Así los oyentes ven qué programa están escuchando en tiempo real.
+
+--------------------------------------------------------------------------------
+
+Dear team at {{station_name}}:
+
+My name is mrHumildad and I'm developing RIOTSRADIOS, a free anticapitalist platform for listening to community radio stations. Your station is already included in the project as a reference point for the radiopunk community.
+
+CURRENT DATA (please verify and correct if needed):
+---------------------------------------------------
+Name:    {{station_name}}
+Location: {{location}}
+Web:     {{webpage}}
+Stream:  {{url}}
+Icon:    {{icon}}
+
+Does any of this data need updating?
+
+EPG MAKER INVITATION:
+---------------------
+I've created a simple tool to generate program guides. The steps:
+
+1. Visit: https://{{epg_maker_url}}
+2. Fill in weekly schedule (times, shows, hosts)
+3. Download the JSON file
+4. Host it on your website (e.g., tuweb.org/epg.json)
+5. Send me the URL to include in RIOTSRADIOS
+
+This way listeners see what program they're listening to in real time.
+
+================================================================================
+
+Un abrazo libre,
+mrHumildad
+{{contact_email}} | https://mrhumildad.github.io/riotsradios/

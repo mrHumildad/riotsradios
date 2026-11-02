@@ -2,15 +2,26 @@
 // Run: node scripts/validate-stations.js  (also runs before `npm run build`)
 //
 // Fails on catalog defects that would reach the player as a blank row, a broken
-// click target, an unsafe URL, or an active http:// stream (browsers block mixed
-// content on the HTTPS deployment, so an https:// mirror or the relay is required).
+// click target, an unsafe URL, or an active http:// stream nobody permits.
+//
+// An active http:// row is accepted only when its host is listed in
+// data/cleartext-hosts.json with that station id: those rows are carried by the
+// Android app (whose network security config is generated from the same file)
+// and stay hidden by the https GitHub Pages build.
 
 import { readFile, readdir } from 'node:fs/promises'
 import { parseCsv } from '../lib/parseCsv.js'
 import { REQUIRED_COLUMNS, parseStationRows, isPlayableStation } from '../lib/stations.js'
+import {
+  normalizeHost,
+  parseAllowlist,
+  renderNetworkSecurityConfig,
+} from '../lib/cleartext.js'
 
 const CSV_PATH = 'stations.csv'
 const EPG_DIR = 'public/EPGs'
+const ALLOWLIST_PATH = 'data/cleartext-hosts.json'
+const CLEARTEXT_CONFIG_PATH = 'android/app/src/main/res/xml/network_security_config.xml'
 
 const errors = []
 const warnings = []
@@ -56,11 +67,21 @@ async function main() {
     }
   }
 
+  /* ── cleartext allowlist (shared with the Android build) ───────── */
+  let allowlist
+  try {
+    allowlist = parseAllowlist(JSON.parse(await readFile(ALLOWLIST_PATH, 'utf8')))
+  } catch (e) {
+    console.error(`Cannot read ${ALLOWLIST_PATH}: ${e.message}`)
+    process.exit(1)
+  }
+
   /* ── row checks ────────────────────────────────────────────────── */
   const rows = parseStationRows(csv)
   const active = rows.filter(s => !s.stream_broken)
   const seenIds = new Map()
   const seenUrls = new Map()
+  const carriedByApp = []
 
   let epgFiles = null
   try {
@@ -109,7 +130,15 @@ async function main() {
       }
 
       if (station.url.startsWith('http://')) {
-        fail(line, `${label(station)}: active station uses http://, which browsers block on the HTTPS deployment — use an https:// mirror or the relay`)
+        const host = normalizeHost(station.url)
+        const entry = allowlist.entries.find((e) => e.host === host)
+        if (!entry) {
+          fail(line, `${label(station)}: active station uses http://, which browsers block on the HTTPS deployment — use an https:// mirror, or add ${host} to ${ALLOWLIST_PATH} to carry it in the app only`)
+        } else if (!entry.station_ids.includes(station.id)) {
+          fail(line, `${label(station)}: ${host} is allowlisted, but id ${station.id} is not in its station_ids in ${ALLOWLIST_PATH}`)
+        } else {
+          carriedByApp.push(station)
+        }
       }
     }
 
@@ -126,13 +155,43 @@ async function main() {
     }
   }
 
+  /* ── allowlist consistency ─────────────────────────────────────── */
+  for (const entry of allowlist.entries) {
+    const used = rows.some(
+      (s) =>
+        !s.stream_broken &&
+        s.url &&
+        normalizeHost(s.url) === entry.host &&
+        entry.station_ids.includes(s.id)
+    )
+    if (!used) {
+      fail(null, `${ALLOWLIST_PATH} lists ${entry.host}, but no active http:// station uses it — remove the entry or its stale station id(s)`)
+    }
+  }
+
+  /* The Android config is generated from the allowlist; a hand edit drifts. */
+  try {
+    const committed = await readFile(CLEARTEXT_CONFIG_PATH, 'utf8')
+    if (committed !== renderNetworkSecurityConfig(allowlist.entries)) {
+      fail(null, `${CLEARTEXT_CONFIG_PATH} is stale — run \`npm run cleartext:config\``)
+    }
+  } catch {
+    /* android/ not generated yet: nothing to compare */
+  }
+
   /* ── report ────────────────────────────────────────────────────── */
-  const renderable = rows.filter(isPlayableStation).length
+  const renderable = rows.filter(s => isPlayableStation(s, { cleartextHosts: allowlist.hostSet })).length
   console.log(`\n${CSV_PATH}`)
   console.log(`  rows: ${rows.length}   active: ${active.length}   marked broken: ${rows.length - active.length}   renderable: ${renderable}`)
 
   if (brokenWithoutUrl > 0) {
     info.push(`${brokenWithoutUrl} broken row(s) have no URL yet (needs a stream to be useful)`)
+  }
+
+  if (carriedByApp.length > 0) {
+    info.push(
+      `${carriedByApp.length} active http:// row(s) carried by the app only (${ALLOWLIST_PATH}): ${carriedByApp.map(s => s.id).join(', ')} — hidden by the Pages build`
+    )
   }
 
   if (warnings.length > 0) {
@@ -145,7 +204,7 @@ async function main() {
 
   if (errors.length > 0) {
     console.log(`\n❌ ${errors.length} error(s)`)
-    for (const { line, message } of errors) console.log(`   line ${line}  ${message}`)
+    for (const { line, message } of errors) console.log(`   ${line ? `line ${line}  ` : ''}${message}`)
     console.log('')
     process.exit(1)
   }

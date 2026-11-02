@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GENERATED FILE — do not edit by hand.
+  Source: data/cleartext-hosts.json (npm run cleartext:config).
+
+  Cleartext policy for the RIOTSRADIOS app. targetSdk 28+ refuses plain HTTP by
+  default; these are the only exemptions.
+
+  1. localhost — Capacitor serves the bundle from http://localhost because
+     capacitor.config.json sets `server.androidScheme: "http"`. That origin is
+     what keeps an http:// stream from being blocked as mixed content.
+
+  2. Station hosts that have no https:// mirror. These are exactly the rows the
+     website cannot play (browsers block them on the https Pages site) and the
+     app can. Remove a host here when the station gains an https mirror, and the
+     validator will ask for an https:// URL.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Ké Huelga Radio (id 15) — no https mirror -->
+        <domain includeSubdomains="false">kehuelga.net</domain>
+        <!-- Radio Libertaire (id 17) — no https mirror -->
+        <domain includeSubdomains="false">media.radio-libertaire.org</domain>
+        <!-- Radio Malva (id 14) — no https mirror -->
+        <domain includeSubdomains="false">radiomalva.ddns.net</domain>
+        <!-- Radio Utopía (id 20) — no https mirror -->
+        <domain includeSubdomains="false">streaming.radioutopia.es</domain>
+    </domain-config>
+</network-security-config>

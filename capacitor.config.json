@@ -1,0 +1,9 @@
+{
+  "appId": "com.mrhumildad.riotsradios",
+  "appName": "RIOTSRADIOS",
+  "webDir": "dist-android",
+  "backgroundColor": "#000000",
+  "server": {
+    "androidScheme": "http"
+  }
+}
