@@ -150,6 +150,18 @@ async function main() {
       }
     }
 
+    /* Stored mirrors are never rendered or played, so a bad one is a warning:
+       the column name promises the scheme, and a silent mismatch hides a typo. */
+    for (const [field, prefix] of [['url_http', 'http://'], ['url_https', 'https://']]) {
+      const value = station[field]
+      if (!value) continue
+      if (/\s/.test(value)) {
+        warn(line, `${label(station)}: ${field} contains whitespace/newline — ${JSON.stringify(value)}`)
+      } else if (!value.startsWith(prefix)) {
+        warn(line, `${label(station)}: ${field} must start with ${prefix} — ${JSON.stringify(value)}`)
+      }
+    }
+
     if (station.epg_file && !station.stream_broken && epgFiles && !epgFiles.has(station.epg_file)) {
       fail(line, `${label(station)}: epg_file "${station.epg_file}" does not exist in ${EPG_DIR}/`)
     }

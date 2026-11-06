@@ -10,7 +10,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { parseStationRows, isValidStreamUrl } from '../lib/stations.js'
-import { classifyProbe, mergeHealth } from '../lib/health.js'
+import { classifyProbe, mergeHealth, streamTargets } from '../lib/health.js'
 
 const CSV_PATH = 'stations.csv'
 const HEALTH_PATH = 'data/health.json'
@@ -84,41 +84,85 @@ async function readPrevious() {
 function summarize(health) {
   const counts = new Map()
   for (const entry of Object.values(health)) {
+    if (!entry.status) continue
     counts.set(entry.status, (counts.get(entry.status) || 0) + 1)
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1])
 }
 
-async function main() {
-  const rows = parseStationRows(await readFile(CSV_PATH, 'utf8'))
-  const targets = rows.filter((s) => Number.isInteger(s.id) && isValidStreamUrl(s.url))
-  const previous = await readPrevious()
-
-  console.log(`\nProbing ${targets.length} station URL(s), ${CONCURRENCY} at a time…\n`)
-
-  const probed = await runPool(targets, async (station) => {
-    const result = await probe(station.url)
-    const { status, cors } = classifyProbe(result)
-    const merged = mergeHealth(previous[String(station.id)], {
+/* One merged entry for one probe, folded into the previous snapshot entry so a
+   recurring failure keeps accumulating. */
+function mergedFor(previousEntry, result) {
+  const { status, cors } = classifyProbe(result)
+  return {
+    status,
+    entry: mergeHealth(previousEntry, {
       status,
       cors,
       http_code: result.status ?? null,
       content_type: result.content_type || null,
       latency_ms: result.latency_ms,
-    })
-    const flag = ['ok', 'cors_missing'].includes(status) ? '  ' : '✗ '
-    console.log(`${flag}${String(station.id).padStart(3)} ${status.padEnd(13)} ${station.name}`)
-    return [String(station.id), merged]
+    }),
+  }
+}
+
+async function main() {
+  const rows = parseStationRows(await readFile(CSV_PATH, 'utf8'))
+
+  /* `url` plus every stored mirror: one job per distinct URL, so a row whose
+     `url` is its own HTTPS mirror is probed once and reported under both. */
+  const jobs = []
+  for (const station of rows) {
+    if (!Number.isInteger(station.id)) continue
+    for (const target of streamTargets(station)) {
+      if (!isValidStreamUrl(target.url)) continue
+      jobs.push({ station, target })
+    }
+  }
+  const previous = await readPrevious()
+  const stationCount = new Set(jobs.map((job) => job.station.id)).size
+
+  console.log(`\nProbing ${jobs.length} URL(s) across ${stationCount} station(s), ${CONCURRENCY} at a time…\n`)
+
+  const probed = await runPool(jobs, async ({ station, target }) => {
+    const result = await probe(target.url)
+    return { station, target, result }
   }, CONCURRENCY)
 
   const health = {}
-  for (const [id, entry] of probed.sort((a, b) => Number(a[0]) - Number(b[0]))) health[id] = entry
+  for (const { station, target, result } of probed) {
+    const id = String(station.id)
+    const prev = previous[id]
+    const record = health[id] || (health[id] = {})
+    const parts = []
+
+    if (target.schemes.includes('url')) {
+      const { status, entry } = mergedFor(prev, result)
+      Object.assign(record, entry)
+      parts.push(`url:${status}`)
+    }
+
+    for (const scheme of target.schemes) {
+      if (scheme === 'url') continue
+      const { status, entry } = mergedFor(prev?.mirrors?.[scheme], result)
+      record.mirrors ||= {}
+      record.mirrors[scheme] = entry
+      parts.push(`${scheme}:${status}`)
+    }
+
+    const flag = parts.some((part) => !/:(ok|cors_missing)$/.test(part)) ? '✗ ' : '  '
+    console.log(`${flag}${String(station.id).padStart(3)} ${parts.join(' ').padEnd(34)} ${station.name}`)
+  }
+
+  /* Keys in catalog order so the committed diff stays readable. */
+  const ordered = {}
+  for (const id of Object.keys(health).sort((a, b) => Number(a) - Number(b))) ordered[id] = health[id]
 
   await mkdir('data', { recursive: true })
-  await writeFile(HEALTH_PATH, `${JSON.stringify(health, null, 2)}\n`, 'utf8')
+  await writeFile(HEALTH_PATH, `${JSON.stringify(ordered, null, 2)}\n`, 'utf8')
 
   console.log(`\nWrote ${HEALTH_PATH}`)
-  for (const [status, count] of summarize(health)) console.log(`  ${status.padEnd(14)} ${count}`)
+  for (const [status, count] of summarize(ordered)) console.log(`  ${status.padEnd(14)} ${count}`)
   console.log('')
 }
 

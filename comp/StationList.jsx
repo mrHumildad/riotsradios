@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import StationItem from './StationItem'
 
-function StationList({ stations, currentStationIndex, isPlaying, onSelectStation, epgData, currentShows, onOpenEpg }) {
+function StationList({ stations, currentStationIndex, isPlaying, onSelectStation, epgData, currentShows, onOpenEpg, onEditStation, onAddStation }) {
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -21,7 +21,20 @@ function StationList({ stations, currentStationIndex, isPlaying, onSelectStation
 
   return (
     <div className="station-list-wrapper">
-      <div className="station-section-label">CHANNELS</div>
+      <div className="station-section-label">
+        <span>CHANNELS</span>
+        {import.meta.env.DEV && onAddStation && (
+          <button
+            type="button"
+            className="station-add-btn"
+            onClick={onAddStation}
+            aria-label="Add a station to stations.csv"
+            title="Add a station to stations.csv"
+          >
+            + NEW
+          </button>
+        )}
+      </div>
       <div className="station-list-inner" ref={listRef}>
         {stations.map((station, index) => (
         <StationItem
@@ -34,6 +47,7 @@ function StationList({ stations, currentStationIndex, isPlaying, onSelectStation
           hasEpg={epgData.has(station.id)}
           currentShow={currentShows.get(station.id) || null}
           onOpenEpg={onOpenEpg}
+          onEditStation={onEditStation}
          />
          ))}
         </div>

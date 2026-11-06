@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useReducer } from 'react'
 import { useRadioLogic } from './logic.js'
-import { stations } from './stations.js'
+import { stations, refreshStations } from './stations.js'
 import logoPng from '/logob_transp_ffc107.png'
 import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
 import EPGModal from './comp/EPGModal.jsx'
+import StationEditModal from './comp/StationEditModal.jsx'
 import { version } from './package.json'
 function App() {
 const {
@@ -42,6 +43,50 @@ const {
 
   const modalEpg = epgModalStation ? epgData.get(epgModalStation.id) : null
 
+  /* Development-only catalog editor. The station is looked up by its CSV line
+     so the modal keeps following the row after the list is refreshed. */
+  const [editStationLine, setEditStationLine] = useState(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [, refreshCatalogView] = useReducer((tick) => tick + 1, 0)
+  const editStation = editStationLine == null
+    ? null
+    : stations.find((station) => station._line === editStationLine) || null
+  const nextFreeId = stations.reduce((max, station) => {
+    const id = Number(station.id)
+    return Number.isInteger(id) && id > max ? id : max
+  }, 0) + 1
+
+  const openEditor = useCallback((line) => {
+    setIsCreating(false)
+    setEditStationLine(line)
+  }, [])
+
+  const openCreator = useCallback(() => {
+    setEditStationLine(null)
+    setIsCreating(true)
+  }, [])
+
+  const closeEditor = useCallback(() => {
+    setIsCreating(false)
+    setEditStationLine(null)
+  }, [])
+
+  const handleStationSaved = useCallback(async (data) => {
+    await refreshStations()
+    if (data?.created) {
+      setIsCreating(false)
+      setEditStationLine(data.row.line)
+    }
+    refreshCatalogView()
+  }, [])
+
+  const handleStationDeleted = useCallback(async () => {
+    setIsCreating(false)
+    setEditStationLine(null)
+    await refreshStations()
+    refreshCatalogView()
+  }, [])
+
   useEffect(() => {
     const isLeft  = e => ['ArrowLeft','Left'].includes(e.key) || e.keyCode === 37;
     const isRight = e => ['ArrowRight','Right'].includes(e.key) || e.keyCode === 39;
@@ -55,11 +100,13 @@ const {
 
     const h = (e) => {
       if (e.isComposing) return;
-      const hasModal = !!epgModalStation;
-      if (hasModal) {
+      if (epgModalStation) {
         if (isEsc(e)) { setEpgModalStation(null); e.preventDefault(); }
         return;
       }
+      /* The station editor owns the keyboard while it is open; playback
+         shortcuts must not fire behind its modal. */
+      if (editStation || isCreating) return;
       /* Never hijack keys from a focused control (slider, link, row button). */
       const target = e.target
       if (target instanceof Element && target.closest('input, textarea, select, a, button, [role="button"], [contenteditable="true"]')) return
@@ -75,7 +122,7 @@ const {
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [epgModalStation, currentStationObject, epgData, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying, setEpgModalStation]);
+  }, [epgModalStation, editStation, isCreating, currentStationObject, epgData, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying, setEpgModalStation]);
 
   useEffect(() => {
     const m = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -200,6 +247,8 @@ const {
         epgData={epgData}
         currentShows={currentShows}
         onOpenEpg={setEpgModalStation}
+        onEditStation={openEditor}
+        onAddStation={openCreator}
       />
 
       </div>
@@ -215,6 +264,17 @@ const {
           epg={modalEpg}
           getDaySchedule={getDaySchedule}
           onClose={() => setEpgModalStation(null)}
+        />
+      )}
+
+      {/* Development-only catalog editor; dropped from production builds. */}
+      {import.meta.env.DEV && (isCreating || editStation) && (
+        <StationEditModal
+          station={isCreating ? null : editStation}
+          nextId={nextFreeId}
+          onClose={closeEditor}
+          onSaved={handleStationSaved}
+          onDeleted={handleStationDeleted}
         />
       )}
 

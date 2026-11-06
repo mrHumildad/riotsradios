@@ -83,6 +83,16 @@ npm run validate:stations
 
 It rejects malformed rows (invalid/blank IDs, duplicate IDs or stream URLs, non-`http(s)` URLs, broken `epg_file` references) and runs automatically before every build, so a bad row cannot ship. An **active** station must use `https://`: browsers block `http://` audio on the HTTPS deployment, so add an HTTPS mirror or route the stream through the relay before enabling it. Broken (`stream_broken`) rows are only warned about, since they are already hidden.
 
+### Editing a station inside the app (development only)
+
+```bash
+npm run dev
+```
+
+In development every row in the channel list carries an **EDIT** button. It opens a modal with that station's catalog fields — name, location, hidden flag, stream URL and mirrors, links, contact and guide file — and writes the change straight back to `stations.csv`. The catalog validator runs on every save and reports inside the modal, and the list refreshes on the spot so the edited stream can be played without restarting the app.
+
+The **+ NEW** button above the list opens the same modal blank and appends a row with the next free id (a name and stream URL are required). A station's modal also has **DELETE**, which removes its row after a confirmation that spells out the cost: its id and health history go with it, and the rows below shift up a line. For a station that may return, tick **Hidden** instead. Neither the buttons nor the write endpoint (`scripts/catalog-plugin.mjs`, a dev-server middleware) exists in the production build.
+
 A station with no HTTPS mirror at all can still be carried **in the Android app only**: add its host and id to `data/cleartext-hosts.json`, run `npm run cleartext:config` (regenerates the app's network security config from that list), then clear `stream_broken`. The validator accepts it as app-only and the GitHub Pages build keeps hiding it — see `docs/CORS-IN-APP.md`.
 
 ## Development

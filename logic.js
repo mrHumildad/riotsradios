@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { stations } from './stations.js'
+import { stations, logStationClick } from './stations.js'
 import { createPlaybackController } from './lib/playbackController.js'
 import { createSpectrumAnalyzer } from './lib/spectrumAnalyzer.js'
 import { createNativeSpectrum, nativePlaybackAvailable } from './lib/nativeSpectrum.js'
@@ -174,6 +174,7 @@ export function useRadioLogic() {
 
   const selectStation = useCallback(async (index) => {
     if (!Number.isInteger(index) || index < 0 || index >= stations.length) return
+    logStationClick(stations[index])
     if (index === currentIndexRef.current && controllerRef.current?.getState() === 'playing') return
 
     if (currentIndexRef.current !== index) {

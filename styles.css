@@ -2073,3 +2073,338 @@ input[type="range"]::-moz-range-track {
   .station-name-line { font-size: 1.35rem; }
   .station-location-line { font-size: 1rem; }
 }
+
+/* =========================================================
+   SECTION 5c — STATION EDITOR (development only)
+   ========================================================= */
+
+/* EDIT pill in station-aside — dev builds only */
+.station-edit-trigger {
+  font-family: var(--font-stencil);
+  font-size: 0.57rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cyan-dim);
+  background: transparent;
+  border: 1px solid var(--cyan-dim);
+  padding: 2px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.6;
+  transition: color .12s ease, border-color .12s ease;
+}
+
+.station-edit-trigger:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.station-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.station-edit-modal {
+  background: var(--panel-dark);
+  border: 1px solid var(--border-warm);
+  width: 100%;
+  max-width: 640px;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.station-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-warm);
+  flex-shrink: 0;
+}
+
+.station-edit-heading { min-width: 0; }
+
+.station-edit-title {
+  font-family: var(--font-stencil);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.station-edit-meta {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+}
+
+.station-edit-body {
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.station-edit-section { border: 0; }
+
+.station-edit-section legend {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  padding-bottom: 6px;
+}
+
+.station-edit-field { margin-bottom: 10px; }
+
+.station-edit-field > label {
+  display: block;
+  font-family: var(--font-stencil);
+  font-size: 0.62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--off-white);
+  margin-bottom: 4px;
+}
+
+.station-edit-field input[type="text"] {
+  width: 100%;
+  font-family: var(--font-stencil);
+  font-size: 0.72rem;
+  color: var(--off-white);
+  background: var(--chassis-dark);
+  border: 1px solid var(--border-warm);
+  border-radius: 2px;
+  padding: 6px 8px;
+}
+
+.station-edit-field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 8px var(--amber-glow);
+}
+
+.station-edit-field input[type="text"]:read-only { color: var(--warm-gray); }
+
+.station-edit-hint {
+  margin-top: 3px;
+  font-size: 0.55rem;
+  line-height: 1.45;
+  letter-spacing: .02em;
+  color: var(--warm-gray);
+}
+
+.station-edit-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.station-edit-check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--amber);
+  cursor: pointer;
+}
+
+.station-edit-validation {
+  border-top: 1px solid var(--border-warm);
+  background: var(--chassis-dark);
+  max-height: 28dvh;
+  overflow: auto;
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+.station-edit-validation-title {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+  margin-bottom: 6px;
+}
+
+.station-edit-validation.ok .station-edit-validation-title { color: var(--green-active); }
+.station-edit-validation.bad .station-edit-validation-title { color: var(--crimson); }
+
+.station-edit-validation pre {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--warm-gray);
+  margin: 0;
+}
+
+.station-edit-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-warm);
+  flex-shrink: 0;
+}
+
+.station-edit-save,
+.station-edit-revert {
+  font-family: var(--font-stencil);
+  font-size: 0.62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, opacity .12s ease;
+}
+
+.station-edit-save {
+  background: var(--amber);
+  border: 1px solid var(--amber);
+  color: #111;
+  font-weight: 700;
+}
+
+.station-edit-save:disabled,
+.station-edit-revert:disabled { opacity: .45; cursor: default; }
+
+.station-edit-revert {
+  background: transparent;
+  border: 1px solid var(--border-warm);
+  color: var(--warm-gray);
+}
+
+.station-edit-revert:hover:not(:disabled) {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.station-edit-status {
+  font-size: 0.6rem;
+  letter-spacing: .06em;
+  color: var(--warm-gray);
+}
+
+.station-edit-status.ok { color: var(--green-active); }
+.station-edit-status.bad { color: var(--crimson); }
+
+@media (max-width: 640px) {
+  .station-edit-trigger { font-size: 0.5rem; padding: 1px 6px; }
+  .station-edit-body { padding: 12px; }
+}
+
+/* + NEW station button in the channel header */
+.station-section-label { gap: 8px; }
+.station-section-label > span { flex: 0 0 auto; }
+
+.station-add-btn {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--cyan-dim);
+  background: transparent;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 2px;
+  padding: 2px 8px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  line-height: 1.6;
+  transition: color .12s ease, border-color .12s ease;
+}
+
+.station-add-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+/* DELETE action in the station editor footer */
+.station-edit-delete {
+  font-family: var(--font-stencil);
+  font-size: 0.62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--crimson-dim);
+  color: var(--crimson);
+  transition: color .12s ease, border-color .12s ease, opacity .12s ease;
+}
+
+.station-edit-delete:hover:not(:disabled) {
+  color: var(--red-live);
+  border-color: var(--red-live);
+}
+
+.station-edit-delete:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+/* Live icon preview in the station editor */
+.station-edit-icon-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.station-edit-icon-frame {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-warm);
+  border-radius: 2px;
+  background: var(--chassis-dark);
+}
+
+.station-edit-icon-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.station-edit-icon-empty {
+  font-family: var(--font-stencil);
+  font-size: 0.7rem;
+  color: var(--warm-gray);
+}
+
+.station-edit-icon-status {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--warm-gray);
+}
+
+.station-edit-icon-status.ok { color: var(--green-active); }
+.station-edit-icon-status.bad { color: var(--crimson); }

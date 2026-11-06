@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { healthBadge } from '../lib/health.js'
 
-function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, hasEpg, onOpenEpg }) {
+function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, hasEpg, onOpenEpg, onEditStation }) {
   const [showEpgName, setShowEpgName] = useState(false)
+  /* The icon is a remote image. A dead URL hides it, and editing the URL must be
+     able to bring it back — so the failure is component state that resets when
+     the URL changes, never a style set on the DOM node by the error handler. */
+  const [iconFailed, setIconFailed] = useState(false)
   const badge = healthBadge(station.health)
+
+  useEffect(() => {
+    setIconFailed(false)
+  }, [station.icon])
 
   useEffect(() => {
     if (!currentShow) {
@@ -37,16 +45,18 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
       <div className="station-num">{String(index + 1).padStart(2, '0')}</div>
 
       <div className="station-body">
-        {station.icon && (
+        {station.icon && !iconFailed && (
           <img
+            key={station.icon}
             src={station.icon}
             alt=""
             width="34"
             height="34"
             loading="lazy"
             decoding="async"
+            referrerPolicy="no-referrer"
             className="station-icon"
-            onError={(e) => { e.target.style.display = 'none' }}
+            onError={() => setIconFailed(true)}
           />
         )}
         <div className="station-info">
@@ -67,6 +77,16 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
       </div>
 
       <div className="station-aside">
+        {import.meta.env.DEV && onEditStation && (
+          <button
+            className="station-edit-trigger"
+            onClick={(e) => { e.stopPropagation(); onEditStation(station._line) }}
+            aria-label={`Edit ${station.name || 'station'} in stations.csv`}
+            title="Edit this station's catalog row"
+          >
+            EDIT
+          </button>
+        )}
         {hasEpg && (
           <button
             className="epg-badge-btn"

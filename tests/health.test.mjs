@@ -5,6 +5,7 @@ import {
   mergeHealth,
   healthBadge,
   isFailingStatus,
+  streamTargets,
   OFFLINE_AFTER_FAILURES,
 } from '../lib/health.js'
 
@@ -113,4 +114,26 @@ test('healthBadge: LIVE, UNSTABLE, OFFLINE and HTTP ONLY', () => {
 test('healthBadge: no data means no badge', () => {
   assert.equal(healthBadge(null), null)
   assert.equal(healthBadge({}), null)
+})
+
+test('streamTargets: a URL known under two names is probed once', () => {
+  assert.deepEqual(
+    streamTargets({
+      url: 'https://s.example/a.mp3',
+      url_http: 'http://s.example/a.mp3',
+      url_https: 'https://s.example/a.mp3',
+    }),
+    [
+      { url: 'https://s.example/a.mp3', schemes: ['url', 'https'] },
+      { url: 'http://s.example/a.mp3', schemes: ['http'] },
+    ]
+  )
+})
+
+test('streamTargets: empty and missing values are skipped', () => {
+  assert.deepEqual(streamTargets({}), [])
+  assert.deepEqual(streamTargets({ url: '  ', url_http: '', url_https: null }), [])
+  assert.deepEqual(streamTargets({ url_http: 'http://s.example/a.mp3' }), [
+    { url: 'http://s.example/a.mp3', schemes: ['http'] },
+  ])
 })
