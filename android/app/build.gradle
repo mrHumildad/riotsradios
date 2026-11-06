@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 
+// Upload signing (see .agents/skills/play-release/SKILL.md). The four properties
+// live in the user-level ~/.gradle/gradle.properties, never in this repo. Play App
+// Signing holds the real app-signing key: this keystore is only the upload key.
+def uploadStoreFile = providers.gradleProperty('RIOTS_UPLOAD_STORE_FILE').orNull
+def uploadKeyAlias = providers.gradleProperty('RIOTS_UPLOAD_KEY_ALIAS').orNull
+def uploadStorePassword = providers.gradleProperty('RIOTS_UPLOAD_STORE_PASSWORD').orNull
+def uploadKeyPassword = providers.gradleProperty('RIOTS_UPLOAD_KEY_PASSWORD').orNull
+
 android {
     namespace = "com.mrhumildad.riotsradios"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -8,6 +16,7 @@ android {
         applicationId "com.mrhumildad.riotsradios"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // versionCode is bumped by scripts/release-android.mjs; never reuse a number.
         versionCode 1
         // package.json is the single source of versionName (see the play-release
         // skill); the Gradle file never holds its own copy.
@@ -19,10 +28,43 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (uploadStoreFile) {
+                storeFile file(uploadStoreFile)
+                storePassword uploadStorePassword
+                keyAlias uploadKeyAlias
+                keyPassword uploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Gradle would happily emit an unsigned release artifact and the mistake would
+// only surface as a Play Console rejection later. Fail here instead.
+tasks.matching { it.name == 'bundleRelease' || it.name == 'assembleRelease' }.configureEach { task ->
+    task.doFirst {
+        def required = [
+            'RIOTS_UPLOAD_STORE_FILE'    : uploadStoreFile,
+            'RIOTS_UPLOAD_KEY_ALIAS'     : uploadKeyAlias,
+            'RIOTS_UPLOAD_STORE_PASSWORD': uploadStorePassword,
+            'RIOTS_UPLOAD_KEY_PASSWORD'  : uploadKeyPassword,
+        ]
+        def missing = required.findAll { key, value -> !value }.keySet()
+        if (!missing.isEmpty()) {
+            throw new GradleException("Release signing is not configured: missing " +
+                "${missing.join(', ')} in ~/.gradle/gradle.properties " +
+                "(see .agents/skills/play-release/SKILL.md).")
+        }
+        if (!file(uploadStoreFile).exists()) {
+            throw new GradleException("Upload keystore not found: ${uploadStoreFile}")
         }
     }
 }

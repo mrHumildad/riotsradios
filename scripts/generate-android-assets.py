@@ -13,6 +13,7 @@ Output goes to android/app/src/main/res/:
     mipmap-*/ic_launcher_round.png       same, circular-masked
     mipmap-*/ic_launcher_foreground.png  adaptive foreground on a 108dp canvas
     drawable*/splash.png                 launch splash, one per density/rotation
+    drawable-xhdpi/tv_banner.png         Android TV home-screen banner (320x180)
 
 The adaptive background stays in values/ic_launcher_background.xml (#000000).
 
@@ -66,6 +67,10 @@ SPLASHES = {
 ICON_SCALE = 0.78  # mark size inside the legacy/round square
 FOREGROUND_SCALE = 0.60  # inside the adaptive 108dp canvas (66dp safe zone)
 SPLASH_SCALE = 0.45  # of the shorter splash side
+
+# Android TV home-screen banner: fixed 320x180 (xhdpi), no other density is used.
+TV_BANNER = (320, 180)
+BANNER_SCALE = 0.78  # of the banner's shorter side
 
 
 def load(path: Path) -> Image.Image:
@@ -122,6 +127,13 @@ def render() -> dict[Path, bytes]:
 
     for directory, size in SPLASHES.items():
         add(RES / directory / "splash.png", fitted(splash_mark, size, SPLASH_SCALE, BLACK))
+
+    # The banner sits on the TV home screen next to posters and video thumbnails:
+    # black ground, mark centred with breathing room rather than edge to edge.
+    add(
+        RES / "drawable-xhdpi" / "tv_banner.png",
+        fitted(splash_mark, TV_BANNER, BANNER_SCALE, BLACK),
+    )
 
     return assets
 

@@ -137,6 +137,8 @@ npm run deploy
 
 ## Release
 
+Publishing on Google Play goes through [`docs/PLAY-STORE-LAUNCH.md`](docs/PLAY-STORE-LAUNCH.md) — the ordered checklist for signing, the AAB, the Console declarations and the test tracks. The web release below is unchanged and keeps shipping alongside it.
+
 For versioned releases with changelogs:
 
 ```bash
