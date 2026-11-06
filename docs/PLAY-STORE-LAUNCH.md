@@ -5,10 +5,12 @@ into every Console form, the listing text, the two-phase upload order, and what
 to do on the release after this one. Nothing here is optional reading — work
 top to bottom.
 
-**State right now:** the signed AAB exists, the privacy policy is live, the
-store graphics exist, and the app has been created in the Console. Two things
-are still missing before you can upload: **phone screenshots** and a **contact
-email**. Everything else is done.
+**State right now:** the signed AAB exists, the privacy policy is live and the
+store graphics exist. Two things are still missing before you can upload:
+**phone screenshots** and a **contact email**. Everything else is done.
+
+If `com.mrhumildad.riotsradios` already appears in the Console, skip step 3 —
+the rest of the order does not change.
 
 **Definition of done:** the app is live in production at 100 %.
 
