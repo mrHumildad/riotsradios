@@ -111,9 +111,10 @@ then Phases 1–3 are history: go straight to Phase 6 for the next update.
       rebased and 404 behind the WebView).
 - [ ] `App.jsx` logo import: `import logoPng from '/logob_transp_ffc107.png'` is
       the same bug — import it relatively or via `import.meta.env.BASE_URL`.
-- [ ] Self-host the two Google Fonts (`Abril Fatface`, `Space Mono`) as woff2 —
-      first launch with no network currently falls back to Helvetica and the
-      amber-CRT identity collapses.
+- [x] Self-host the two Google Fonts (`Abril Fatface`, `Space Mono`) as woff2 —
+      done: `assets/fonts/*-latin.woff2` + `@font-face` in `styles.css`, no CDN
+      link left in `index.html`, so first launch with no network keeps its
+      letterforms.
 - [ ] Confirm the `androidScheme: "http"` choice in `capacitor.config.json`: it is
       what `data/cleartext-hosts.json` + `cleartext:config` rely on for app-only
       http stations. Do not flip it without re-probing (see `docs/CORS-IN-APP.md`).
@@ -140,8 +141,8 @@ then Phases 1–3 are history: go straight to Phase 6 for the next update.
       listener's IP; no analytics, no crash SDK, no accounts) and host it at a
       **stable public URL** that loads in a private window. Never change the URL
       later, only the text. — `public/privacy.html`, deployed by the existing
-      Pages workflow. It also discloses the Google Fonts request; self-hosting the
-      two woff2 files removes that paragraph.
+      Pages workflow. Every asset it lists as bundled really is bundled, so the
+      only network request the page now discloses is the stream itself.
 
 ## Phase 2 — first signed artifacts
 
