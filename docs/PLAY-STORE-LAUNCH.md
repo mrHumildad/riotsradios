@@ -1,257 +1,334 @@
-# Play Store launch — working checklist
+# RIOTSRADIOS on Google Play — one file, start to finish
 
-Publishing RIOTSRADIOS on Google Play **next to** the GitHub Pages build (both
-channels ship; neither replaces the other). Free app, no ads, no purchases, no
-accounts. Phone track first, Android TV track decided separately.
+Everything needed to publish this app: the commands, the exact values to paste
+into every Console form, the listing text, the two-phase upload order, and what
+to do on the release after this one. Nothing here is optional reading — work
+top to bottom.
 
-Source of truth for the procedure: [`.agents/skills/play-release/SKILL.md`](../.agents/skills/play-release/SKILL.md).
-This file is the executable order of that procedure, with what the repo already
-does ticked off.
+**State right now:** the signed AAB exists, the privacy policy is live, the
+store graphics exist, and the app has been created in the Console. Two things
+are still missing before you can upload: **phone screenshots** and a **contact
+email**. Everything else is done.
 
-**Definition of done:** a signed AAB uploaded to the Play Console from a
-`release:android` build, every declaration answered, closed test completed, and
-the app live in production at 100 %.
+**Definition of done:** the app is live in production at 100 %.
 
-## If your developer account already has a live app
+---
 
-An existing published app settles the account side — and almost nothing about
-*this* app:
+## 0. What is already done (do not redo)
 
-- **Already done, skip:** the $25 registration, identity and phone verification,
-  the developer profile, and payments/tax (irrelevant here anyway — free, no ads,
-  no IAP). The Console itself is familiar ground, so the declarations go fast.
-- **Still per-app, cannot be inherited:** the upload key (**one key per app** —
-  never reuse the other app's `.jks`), the listing and its graphics, the Data
-  safety form, the content-rating questionnaire, the target-audience and ads
-  declarations, and — on a personal account — the closed test and production
-  access review for this app.
-- **Free template:** copy the wording you already got approved for the other app,
-  but re-answer Data safety and content rating from what *this* app does (audio
-  only, no ads, no accounts, no user interaction).
-- **Skip the account line in Phase 0 and the "Create app" line in Phase 3** if
-  `com.mrhumildad.riotsradios` already exists in the Console.
-
-If RIOTSRADIOS itself is already live (shipped from another machine or repo),
-then Phases 1–3 are history: go straight to Phase 6 for the next update.
-
-## Where the repo stands today
-
-| Thing | State |
+| Thing | Where it lives |
 |---|---|
-| Capacitor 8, `android/`, `appId com.mrhumildad.riotsradios` | ✅ done |
-| M0 shell APK, M1 Media3 playback + foreground service | ✅ done (`docs/ANDROID-AUTO.md`) |
-| `npm run android:sync` / `android:build` (debug) | ✅ done |
-| `versionName` read from `package.json`, `targetSdk 36`, `minSdk 24` | ✅ done |
-| Android launcher icons generated (`scripts/generate-android-assets.py`) | ✅ done |
-| Signing config + upload keystore | ✅ done — `~/keystores/riotsradios-upload.jks`, credentials in `~/.gradle/gradle.properties`, fail-fast guard in `build.gradle` |
-| `android:bundle`, `android:export`, `release:android` | ✅ done — `scripts/export-android.mjs`, `scripts/release-android.mjs` |
-| `versionCode` policy | ✅ `release:android` bumps it by one; the first AAB is `versionCode 1` |
-| TV manifest bits (leanback, banner, TV intent-filter) | ✅ done — banner from `assets:android` |
-| Privacy policy URL | ✅ `public/privacy.html` → `https://mrhumildad.github.io/riotsradios/privacy.html` (live after the next Pages deploy) |
-| Store listing copy + graphics | ◐ copy, icon and feature graphic done (`docs/STORE-LISTING.md`, `store/`); phone/TV screenshots and the contact email still missing |
+| Upload key | `~/keystores/riotsradios-upload.jks`, alias `riots-upload`, RSA 4096, valid until 2054 |
+| Key passwords | `~/keystores/riotsradios-upload-credentials.txt` (back it up twice) |
+| Gradle credentials | `RIOTS_UPLOAD_*` in `~/.gradle/gradle.properties` (never in the repo) |
+| Signed artifacts | `android-builds/riotsradios-v1.2.0.aab` (7.1 MB) and `.apk` (7.4 MB) |
+| Privacy policy | live at `https://mrhumildad.github.io/riotsradios/privacy.html` |
+| Store icon | `store/icon-512.png` — 512×512, 32-bit PNG |
+| Feature graphic | `store/feature-graphic-1024x500.png` — 1024×500, RGB, no alpha |
+| Android TV | leanback features + `LEANBACK_LAUNCHER` + banner, all inside the same AAB |
+| Fonts | self-hosted woff2; the app makes no request except the stream |
 
-## Phase 0 — accounts and machine (do first, longest lead time)
+Verify the key still opens before trusting any of it:
 
-- [x] Play Console developer account — already have one with a live app, so the
-      $25 payment, identity verification and D-U-N-S number do not apply again.
-- [x] Android SDK installed and `./gradlew` works in `android/`
-      (`sdk.dir` in `android/local.properties`, SDK 36 + build-tools 36.1.0).
-- [ ] Decide: **TV track now or later?** It changes the asset list (banner + TV
-      screenshots) and the Console forms. Phone-only first is the cheaper launch.
-- [ ] Decide: **who owns the release version.** changesets already owns
-      `package.json` (`npm run release` for the web); the AAB must be cut after
-      that version is final and must not bump it again.
-- [ ] Commit or stash the current working tree so the first release build is
-      reproducible (`git status` is dirty today).
+```bash
+keytool -list -keystore ~/keystores/riotsradios-upload.jks -alias riots-upload
+```
 
-## Phase 1 — finish the Android build pipeline (all code work, no Console)
+---
 
-### Signing (one-time, permanent)
+## 1. The two things left before uploading
 
-- [x] Create the upload keystore **outside the repo**, e.g.
-      `~/keystores/riotsradios-upload.jks`, alias `riots-upload`:
-      `keytool -genkeypair -v -keystore ~/keystores/riotsradios-upload.jks -alias riots-upload -keyalg RSA -keysize 4096 -validity 10000` —
-      done, RSA 4096, valid until 2054, password in
-      `~/keystores/riotsradios-upload-credentials.txt`.
-- [ ] Back it up twice (password manager + offline media) and verify a copy
-      opens: `keytool -list -v -keystore … -alias riots-upload`.
-- [x] Put `RIOTS_UPLOAD_STORE_FILE`, `RIOTS_UPLOAD_KEY_ALIAS`,
-      `RIOTS_UPLOAD_STORE_PASSWORD`, `RIOTS_UPLOAD_KEY_PASSWORD` in **user-level**
-      `~/.gradle/gradle.properties` — never in the repo.
-- [x] Add `*.jks`, `*.keystore`, `android-builds/`, `android/local.properties` to
-      `.gitignore` as a backstop.
-- [x] `android/app/build.gradle`: add `signingConfigs.release` reading those four
-      properties, wire it into `buildTypes.release`, and add the **fail-fast
-      guard** (`doFirst` on `bundleRelease`/`assembleRelease` that throws when a
-      property is missing — Gradle otherwise emits an unsigned AAB silently).
-- [ ] Optional: `applicationIdSuffix ".debug"` + `versionNameSuffix "-debug"` on
-      the debug build so adb builds install next to the Play copy.
+### 1a. Contact email
 
-### Release scripts
+Play requires one on the store listing; it becomes public. Put the address you
+are willing to receive user mail at into the *Store listing → Contact details*
+form. The policy page points at the issue tracker instead — that is fine for the
+policy, but the Console field will not accept it.
 
-- [x] `android:bundle` → `android:sync && cd android && ./gradlew bundleRelease assembleRelease`
-      (both tasks in **one** Gradle run; `bundleRelease` alone leaves a stale APK
-      behind).
-- [x] `android:export` → copy to `android-builds/riotsradios-v<version>.{aab,apk}`
-      after checking `output-metadata.json` versionName/versionCode match
-      `package.json` and the Gradle file, plus a signature check
-      (`jarsigner`, falling back to `keytool -printcert -jarfile`).
-- [x] `release:android` → sync → `versionCode` +1 → bundle+assemble → export →
-      print the AAB path. No `versionName` bump (changesets owns it).
-      `--no-bump` rebuilds the current versionCode for a first upload.
-- [x] `android:icons` → regenerate `mipmap-*` + `res/drawable-xhdpi/tv_banner.png`
-      from one source image (alias of `assets:android`).
+### 1b. Phone screenshots (at least 2)
 
-### Web → Android traps (check in `dist-android/index.html`, not the source)
+Play's rule that trips everyone: **maximum aspect ratio 2:1**. A raw 390×844
+phone capture is 2.16:1 and gets rejected. Use 1260×2520, or crop.
 
-- [ ] `--base=./` into `dist-android/` — already how `build:android` runs; confirm
-      the built HTML has **no** `/riotsradios/` absolute paths.
-- [ ] `<link rel="icon">` / `rel="manifest"` in `index.html`: rebase with
-      `%BASE_URL%…` or drop them from the Android build (public paths are not
-      rebased and 404 behind the WebView).
-- [ ] `App.jsx` logo import: `import logoPng from '/logob_transp_ffc107.png'` is
-      the same bug — import it relatively or via `import.meta.env.BASE_URL`.
-- [x] Self-host the two Google Fonts (`Abril Fatface`, `Space Mono`) as woff2 —
-      done: `assets/fonts/*-latin.woff2` + `@font-face` in `styles.css`, no CDN
-      link left in `index.html`, so first launch with no network keeps its
-      letterforms.
-- [ ] Confirm the `androidScheme: "http"` choice in `capacitor.config.json`: it is
-      what `data/cleartext-hosts.json` + `cleartext:config` rely on for app-only
-      http stations. Do not flip it without re-probing (see `docs/CORS-IN-APP.md`).
-- [ ] Re-probe CORS from the app's own origin (`data/health.json` was measured
-      from `https://mrhumildad.github.io`), and confirm `cors: "origin"` stations
-      still show a real spectrum in the app.
+Take three, in this order of usefulness:
 
-### TV channel (skip only if the TV track is not submitted)
+1. Player with a station playing — amber CRT display, spectrum live.
+2. Station list, several stations visible.
+3. The guide (EPG) modal open.
 
-- [x] `<uses-feature android:name="android.software.leanback" android:required="false" />`
-      **and** `android.hardware.touchscreen` `required="false"` in the manifest.
-- [x] `LEANBACK_LAUNCHER` intent-filter on `MainActivity`.
-- [x] 320×180 `res/drawable-xhdpi/tv_banner.png` + `android:banner` on
-      `<application>` — generated by `npm run android:icons` from
-      `public/splash-logo.png`, so it cannot drift from the launcher icons.
-- [x] No orientation lock anywhere in the manifest (a portrait lock disqualifies
-      the TV submission); `MainActivity` decides orientation instead.
-- [ ] D-pad focus ring visible and remote media keys working on a real device /
-      emulator with a D-pad.
+```bash
+# If you capture on a phone and need 1260x2520, resize without distorting:
+# (any tool works — this is the ratio Play enforces, not the pixel count)
+```
 
-### Policy page
+Screenshots have to come off a device running this build. There is no emulator
+wired up in this repo.
 
-- [x] Write the privacy policy (nothing collected; third-party streams see the
-      listener's IP; no analytics, no crash SDK, no accounts) and host it at a
-      **stable public URL** that loads in a private window. Never change the URL
-      later, only the text. — `public/privacy.html`, deployed by the existing
-      Pages workflow. Every asset it lists as bundled really is bundled, so the
-      only network request the page now discloses is the stream itself.
+---
 
-## Phase 2 — first signed artifacts
+## 2. Build the uploadable bundle
 
-- [ ] `npm run validate:stations && npm test` green.
-- [x] First signed artifacts built by `npm run android:bundle && npm run android:export`:
-      `android-builds/riotsradios-v1.2.0.aab` (7.1 MB) and `.apk` (7.3 MB),
-      `versionCode 1`.
-- [x] Signature checked — certificate `CN=RIOTSRADIOS, OU=Upload` in the AAB, and
-      `aapt2 dump badging` reports `com.mrhumildad.riotsradios` / `versionCode 1` /
-      `targetSdk 36`.
-- [ ] Install the APK on a real phone (not just an emulator): cold start, play,
-      **screen off for 10 min** (audio keeps going, notification shows), stop
-      (notification gone, socket closed), rotate, airplane mode → error copy.
-- [ ] Install the debug APK side by side (if the suffix is set) and confirm both
-      coexist.
+The artifact already sitting in `android-builds/` is current. Rebuild only if
+the source changed since `versionCode 1` was cut.
 
-## Phase 3 — Play Console setup
+```bash
+npm run validate:stations     # catalog gates; a bad row cannot ship
+npm test                      # unit tests
 
-- [ ] **Create app** (skip if `com.mrhumildad.riotsradios` is already in the
-      Console). Values for the form:
+# First upload: keep versionCode 1, nothing has been uploaded yet.
+node scripts/release-android.mjs --no-bump
 
-  | Field | Value |
-  |---|---|
-  | App name | `RIOTSRADIOS - Community Radio` — 29/30 chars; `RIOTSRADIOS` (11) is the safe fallback |
-  | Package name | `com.mrhumildad.riotsradios` — permanent, must match the AAB's `applicationId` exactly |
-  | Default language | `English (United States) – en-US` |
-  | App or game | **App** |
-  | Free or paid | **Free** — irreversible once published |
-  | Declarations | tick both: Developer Program Policies + US export laws |
+ls -la android-builds
+# android-builds/riotsradios-v1.2.0.aab
+# android-builds/riotsradios-v1.2.0.apk
+```
 
-      The package name cannot be changed or reused after creation: it is what the
-      Console matches against `applicationId` in `android/app/build.gradle`, so a
-      bundle built with any other id fails the upload with "package name does not
-      match". The store title, by contrast, can be edited later; it does not have
-      to equal the launcher label (`strings.xml` → `app_name`), though keeping them
-      close avoids confusing existing users.
-- [ ] **Store listing**
-  - [x] App name ≤ 30 chars, short description ≤ 80, full description ≤ 4000 —
-        paste-ready in [`STORE-LISTING.md`](STORE-LISTING.md).
-  - [x] Icon 512×512 PNG with alpha (≤ 1 MB) — `store/icon-512.png`.
-  - [x] Feature graphic 1024×500 JPEG or 24-bit PNG, **no alpha** —
-        `store/feature-graphic-1024x500.png` (RGB, no alpha channel).
-  - [ ] Phone screenshots ≥ 2, 16:9 or 9:16, **max aspect 2:1** (1260×2520 is
-        the safe format; 390×844 shots are rejected at 2.16:1).
-  - [ ] TV screenshots 16:9 (1280×720 / 1920×1080) + banner, if the TV track is in.
-  - [ ] Release note copy in `RELEASE.md` (see the [`release-notes` skill](../.agents/skills/release-notes/SKILL.md)).
-- [ ] **Declarations** (all "No" except where noted)
-  - [ ] Privacy policy URL (required even though nothing is collected).
-  - [ ] App access: no login, nothing restricted.
-  - [ ] Ads: No. In-app purchases: No. Advertising ID: No.
-  - [ ] Data safety: **no data collected, no data shared** (justify: no analytics,
-        no crash SDK, no accounts; `data/health.json` is a build-time snapshot).
-  - [ ] Content rating (IARC): no UGC, no chat, no user interaction → Users
-        Interact = No; declare third-party audio honestly.
-  - [ ] Category **Music & Audio**; target audience 13+/18+, not
-        "Designed for Families"; not a news / COVID / government / financial /
-        health app.
-  - [ ] Permissions: `INTERNET` (+ `FOREGROUND_SERVICE*`, `POST_NOTIFICATIONS` for
-        background playback — these need no special declaration but must match the
-        Data safety form).
-- [ ] **App signing**: accept Play App Signing for this app — a **new** upload
-      key, not the one behind your existing listing (the local `.jks` is only the
-      upload key; Play holds the app-signing key).
+What the script does, in order: `android:sync` (cleartext config, spectrum
+bands, Vite build into `dist-android/`, `cap sync`) → `bundleRelease` **and**
+`assembleRelease` in one Gradle run → export, which checks that the APK's
+`output-metadata.json` matches `package.json` and the Gradle `versionCode`, that
+the APK is not older than the AAB, and that the AAB carries a signature.
 
-## Phase 4 — test tracks
+`bundleRelease` alone is the classic way to ship yesterday's APK renamed as
+today's version. Never call it by itself.
 
-- [ ] **Internal testing** upload — two-phase, always:
-      library first (upload `.aab`, wait for **Processed** with the right
-      versionCode) → *Edit release* → *Add app bundle* → check the device-diff
-      table shows no mass −100 % → release notes → Save.
-- [ ] Install **from Play**, not adb, on a device that has never had the app.
-- [ ] Fix whatever the internal build catches; **`versionCode` must increase** on
-      every re-upload (a merely registered upload burns the number).
-- [ ] **Closed testing**: recruit **15–18 testers** (12 minimum), run **14
-      continuous days** (personal accounts; one opt-out can reset the clock). This
-      gate is **per app**, not per account — the other app's closed test does not
-      cover this one. If the Console shows no such requirement for this app, take
-      the screen at its word and skip ahead.
-- [ ] Keep testers actually opening the app during the 14 days — Play checks
-      engagement, not just enrollment.
+Expected values in the bundle:
 
-## Phase 5 — production
+```
+package name   com.mrhumildad.riotsradios
+versionCode    1
+versionName    1.2.0
+minSdk         24
+targetSdk      36
+signer         CN=RIOTSRADIOS, OU=Upload
+```
 
-- [ ] Apply for **production access** (describe the testing, the feedback, the
-      fixes).
-- [ ] Upload the production AAB (same two-phase rule) and review the summary shows
-      the bundle before saving.
-- [ ] Staged rollout **20 % → 50 % → 100 %**, watching crash-free rate and the
-      "background playback dies" reports.
-- [ ] Tag the released commit and note the shipped `versionCode` so the next
-      upload never reuses it.
+---
 
-## Phase 6 — after launch
+## 3. Console → Create app
 
-- [ ] Keep the daily health probe (`.github/workflows/health.yml`) shipping with
-      each new AAB, or stream badges drift from what the app shows.
-- [ ] Second changelog discipline: `CHANGELOG.md` = changesets, `RELEASE.md` =
-      player-facing notes.
-- [ ] Every future release: bump via changesets → `npm run release:android` →
-      `versionCode` +1 → two-phase upload. Never re-use a `versionCode`, never
-      hand-edit the AAB filename.
-- [ ] Move rejected artifacts to `android-builds/rejected/`, clear
-      `~/Downloads` of stale copies, and read the filename before dropping it in
-      the Console.
+If the Console already shows `com.mrhumildad.riotsradios`, skip to step 4.
 
-## Known-good references
+| Field | Paste |
+|---|---|
+| App name | `RIOTSRADIOS - Community Radio` *(29/30)* |
+| Package name | `com.mrhumildad.riotsradios` *(permanent — paste, never type)* |
+| Default language | `English (United States) – en-US` |
+| App or game | **App** |
+| Free or paid | **Free** *(cannot become paid later)* |
 
-- Procedure and trap list: [`.agents/skills/play-release/SKILL.md`](../.agents/skills/play-release/SKILL.md)
-- Playback/service architecture: [`docs/ANDROID-AUTO.md`](ANDROID-AUTO.md)
-- Real spectrum in the app: [`docs/SPECTRUM-ANDROID.md`](SPECTRUM-ANDROID.md)
-- Cleartext/app-only stations: [`docs/CORS-IN-APP.md`](CORS-IN-APP.md)
-- Catalog + EPG rules: [`.agents/skills/stations-epg/SKILL.md`](../.agents/skills/stations-epg/SKILL.md)
+Declarations: tick **both** boxes (Developer Program Policies, US export laws).
+
+The package name can never be changed or reused, and must be byte-identical to
+`applicationId` in `android/app/build.gradle`, or the upload fails with
+"package name does not match".
+
+---
+
+## 4. Console → Store listing
+
+### App name
+
+```
+RIOTSRADIOS - Community Radio
+```
+
+### Short description (66 / 80 characters)
+
+```
+43 independent community radio stations. Free, no ads, no account.
+```
+
+### Full description (1,225 / 4,000 characters)
+
+```
+RIOTSRADIOS is a free tuner for independent, community and non-commercial radio — the stations that still sound like something.
+
+No account. No ads. No trackers. Open it, pick a station, listen.
+
+WHAT YOU GET
+• 40+ hand-picked stations from around the world
+• Retro amber-CRT interface that stays out of the way of the music
+• A real audio spectrum where a station allows it, clearly labelled SIM where it does not
+• Now-playing guide for the stations that publish a schedule
+• Background playback with a proper media notification: lock the screen, the stream keeps going
+• Android TV ready — D-pad focus, remote media keys, a large-screen layout
+• No sign-in, no feed, no recommendations to tune
+
+YOUR LISTENING STAYS YOURS
+Streams load straight from the broadcasters' own servers. The app has no analytics, no crash reporting, no advertising ID and no account, and your listening is never sent anywhere. Full policy: mrhumildad.github.io/riotsradios/privacy.html
+
+REMOTE AND KEYBOARD
+← → previous / next station · ↑ ↓ volume · Enter play or stop · E opens the guide · Back closes it. Media keys work too.
+
+RIOTSRADIOS is an independent, non-commercial project. The station catalog is public and grows through contributions.
+```
+
+The "43" is real: `stations.csv` has 85 rows, 42 flagged `stream_broken`
+(hidden at runtime), leaving 43 playable. Re-check that before changing the copy.
+
+### Graphics
+
+| Console slot | Upload this | Play's rule |
+|---|---|---|
+| App icon | `store/icon-512.png` | 512×512, 32-bit PNG, ≤ 1 MB |
+| Feature graphic | `store/feature-graphic-1024x500.png` | 1024×500, JPEG or 24-bit PNG, **no alpha** |
+| Phone screenshots | step 1b | ≥ 2, max aspect 2:1 |
+| TV screenshots | only if submitting the TV track | 16:9, 1280×720 or 1920×1080 |
+
+Both graphics are generated, never hand-edited:
+
+```bash
+npm run assets:store          # rewrite store/icon-512.png + feature graphic
+npm run assets:store:check    # fail if either drifted from the brand art
+```
+
+---
+
+## 5. Console → Declarations
+
+Answer these exactly; they are true for this build.
+
+| Form | Answer |
+|---|---|
+| Privacy policy | `https://mrhumildad.github.io/riotsradios/privacy.html` |
+| App access (sign-in details) | **No** — no login, nothing restricted |
+| Ads | **No** |
+| In-app purchases | **No** |
+| Advertising ID | **No** — no ads SDK, permission absent |
+| Data safety | **No data collected, no data shared** — no analytics, no crash SDK, no accounts; `data/health.json` is a build-time snapshot |
+| Content rating (IARC) | No UGC, no chat, no user interaction → **Users Interact = No**; declare the third-party audio honestly |
+| Category | **Music & Audio** |
+| Target audience | 13+ / 18+, **not** Designed for Families |
+| News / COVID / government / financial / health app | No / No / No / None / No |
+| Permissions declared | `INTERNET`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS` |
+
+Privacy URL must load in a private window. It does — verified 200, no Google
+Fonts mention, self-hosted fonts served.
+
+---
+
+## 6. Upload — internal testing, two phases
+
+Attaching a bundle inside the create-release wizard races the upload. Click
+through too early and Play saves an **empty release**, which deactivates the
+previous bundle and leaves testers with nothing. Always:
+
+1. **Testing → Internal testing → App bundles → Upload.** Drop
+   `android-builds/riotsradios-v1.2.0.aab`. Stay on the page until the row
+   reads **Processed** and shows `versionCode 1`, minSdk 24, targetSdk 36.
+2. **Track → Create new release → Add app bundle →** pick the processed artifact
+   from the library. It attaches instantly because it is already stored.
+3. **Check the green lights** before saving:
+   - "New app bundles" lists the bundle (not "will be shown here").
+   - Size and time-to-download are populated.
+   - The device-diff table shows no mass **−100 %** (that means an empty release).
+4. Release name + release notes → **Save** → re-read the summary and confirm the
+   bundle is still listed.
+5. **Testers** tab → add your testers list → copy the opt-in URL.
+6. Install **from Play**, on a device that has never had the app. Not adb.
+
+Release notes for this first upload — `RELEASE.md` does not exist yet, so write
+them inline; keep it to what a listener notices:
+
+```
+First Play release of RIOTSRADIOS: 40+ independent stations, now-playing guide,
+background playback with a media notification, and a full Android TV layout.
+No ads, no account, nothing tracked.
+```
+
+Then check on a real phone, not just the Console: cold start, play, **screen off
+for 10 minutes** (audio continues, notification stays), stop (notification gone),
+rotate, airplane mode (error copy, no hang), and on a TV/D-pad device: focus ring
+visible, remote media keys work, tile present on the home screen.
+
+---
+
+## 7. Closed testing
+
+- Personal developer accounts: **12 testers × 14 continuous days**. Recruit
+  15–18; one opt-out can reset the clock.
+- This gate is **per app** — the other app on the account does not cover it. If
+  the Console shows no such requirement for this package, take the screen at its
+  word and continue.
+- Testers must actually open the app across the 14 days; Play looks at
+  engagement, not enrolment alone.
+
+---
+
+## 8. Production
+
+1. Apply for **production access**: what you tested, what feedback came back,
+   what you fixed.
+2. Upload the production bundle with the same two-phase rule from step 6, and
+   confirm the summary shows it before saving.
+3. Staged rollout **20 % → 50 % → 100 %**, watching crash-free rate and
+   "background playback stops" reports.
+4. Note the shipped `versionCode` (tag the commit if you like) so the next upload
+   never reuses it.
+
+---
+
+## 9. The release after this one
+
+`versionName` is owned by changesets via `package.json`; `versionCode` is owned
+by the release script. They never fight.
+
+```bash
+npx changeset                 # describe the change
+npx changeset version         # bumps package.json → new versionName
+npm run release:android       # sync → versionCode +1 → bundle+assemble → export
+```
+
+Then repeat step 6 with the new `.aab` from `android-builds/`.
+
+Rules that do not bend:
+
+- **`versionCode` never repeats.** Every upload needs a fresh one, including a
+  re-upload after a rejected review — an upload that merely registers burns the
+  number.
+- **Never call `bundleRelease` alone.** `npm run android:bundle` runs it with
+  `assembleRelease` in one Gradle run, which is what keeps the APK from being
+  yesterday's.
+- **Read the filename before dropping the file.** One character apart, and the
+  file picker happily serves an old download. Move rejected artifacts to
+  `android-builds/rejected/` and clear `~/Downloads`.
+- **Keep `android-builds/` and `*.jks` out of git.** Both are in `.gitignore`.
+
+---
+
+## 10. Troubleshooting
+
+| Message | Cause | Fix |
+|---|---|---|
+| "The package name... does not match" | AAB built with another `applicationId` | rebuild from this repo; it must be `com.mrhumildad.riotsradios` |
+| "Version code N has already been used" | reused a `versionCode` | `npm run release:android` bumps it; never hand-edit backwards |
+| Release saved with no bundle / testers lost access | bundle attached inside the wizard | delete the release, redo step 6 in two phases |
+| "No deobfuscation file" | `minifyEnabled false` | expected, ignore |
+| Screenshot rejected: aspect ratio | 390×844 = 2.16:1 | export at 1260×2520 |
+| Feature graphic rejected | alpha channel | use the generated RGB file |
+| AAB rejected as unsigned | `RIOTS_UPLOAD_*` missing | check `~/.gradle/gradle.properties`; the Gradle guard should have blocked the build |
+| Privacy URL 404s | Pages deploy is lagging (minutes), or the workflow failed | check the `gh-pages` branch has `privacy.html`; redeploy with `npm run deploy` |
+| Icon looks like the stock Capacitor logo | icons not regenerated | `npm run assets:android` then rebuild |
+
+---
+
+## 11. File map
+
+```
+android-builds/                     release artifacts (git-ignored)
+store/icon-512.png                  Play icon
+store/feature-graphic-1024x500.png  Play feature graphic
+public/privacy.html                 live policy page
+docs/PLAY-STORE-LAUNCH.md           this file
+docs/ANDROID-AUTO.md                Media3 playback + service architecture
+docs/CORS-IN-APP.md                 app-only http stations / cleartext config
+docs/SPECTRUM-ANDROID.md            real spectrum inside the app
+.agents/skills/play-release/SKILL.md  the procedure this file follows
+.agents/skills/stations-epg/SKILL.md  catalog + EPG rules
+.agents/skills/release-notes/SKILL.md player-facing release notes
+scripts/release-android.mjs          sync → versionCode+1 → build → export
+scripts/export-android.mjs           version/signature checks + copy
+scripts/generate-store-assets.py     Play graphics from brand art
+scripts/generate-android-assets.py   launcher icons, splash, TV banner
+```
