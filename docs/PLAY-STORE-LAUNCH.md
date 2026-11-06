@@ -255,6 +255,23 @@ visible, remote media keys work, tile present on the home screen.
   word and continue.
 - Testers must actually open the app across the 14 days; Play looks at
   engagement, not enrolment alone.
+- The track reads **Inactive** until a release is rolled out on it. That is the
+  normal state, not an error — it turns active at the end of step 6.
+
+### 7a. Testers and feedback — the two fields that bite
+
+Use the **Email lists** tab. It needs no setup and takes up to 100 addresses,
+comma-separated. Twelve distinct Google accounts is all the gate wants.
+
+- Do **not** pad the list with plus-addresses (`you+1@gmail.com`): Play counts
+  accounts, not addresses, and aliases do not count towards the twelve.
+- The **Google Groups** tab only works for a group that already exists and that
+  the Play account can see. The field wants the group's *address*,
+  `name@googlegroups.com` — not the `groups.google.com/g/name` web URL. A URL
+  pasted there is the usual cause of "This Google Group doesn't exist or you
+  don't have access to it".
+- **Feedback URL or email address** is where testers send you bug reports. Put
+  the contact email from step 1a. It is not a second home for the group link.
 
 ---
 
@@ -312,6 +329,8 @@ Rules that do not bend:
 | AAB rejected as unsigned | `RIOTS_UPLOAD_*` missing | check `~/.gradle/gradle.properties`; the Gradle guard should have blocked the build |
 | Privacy URL 404s | Pages deploy is lagging (minutes), or the workflow failed | check the `gh-pages` branch has `privacy.html`; redeploy with `npm run deploy` |
 | Icon looks like the stock Capacitor logo | icons not regenerated | `npm run assets:android` then rebuild |
+| "This Google Group doesn't exist or you don't have access to it" | a `groups.google.com/g/...` URL pasted where the group *address* belongs, or the group was never created / is not visible to this Play account | cleanest: use an **email list** and skip groups; otherwise create the group at groups.google.com/create and enter `name@googlegroups.com`, with your Play account as owner |
+| Feedback field holds a group link | that field expects somewhere testers can reach you | put the contact email from step 1a |
 
 ---
 
