@@ -48,7 +48,7 @@ then Phases 1–3 are history: go straight to Phase 6 for the next update.
 | `versionCode` policy | ✅ `release:android` bumps it by one; the first AAB is `versionCode 1` |
 | TV manifest bits (leanback, banner, TV intent-filter) | ✅ done — banner from `assets:android` |
 | Privacy policy URL | ✅ `public/privacy.html` → `https://mrhumildad.github.io/riotsradios/privacy.html` (live after the next Pages deploy) |
-| Store listing copy + graphics | ❌ missing |
+| Store listing copy + graphics | ◐ copy, icon and feature graphic done (`docs/STORE-LISTING.md`, `store/`); phone/TV screenshots and the contact email still missing |
 
 ## Phase 0 — accounts and machine (do first, longest lead time)
 
@@ -180,9 +180,11 @@ then Phases 1–3 are history: go straight to Phase 6 for the next update.
       to equal the launcher label (`strings.xml` → `app_name`), though keeping them
       close avoids confusing existing users.
 - [ ] **Store listing**
-  - [ ] App name ≤ 30 chars, short description ≤ 80, full description ≤ 4000.
-  - [ ] Icon 512×512 PNG with alpha (≤ 1 MB).
-  - [ ] Feature graphic 1024×500 JPEG or 24-bit PNG, **no alpha**.
+  - [x] App name ≤ 30 chars, short description ≤ 80, full description ≤ 4000 —
+        paste-ready in [`STORE-LISTING.md`](STORE-LISTING.md).
+  - [x] Icon 512×512 PNG with alpha (≤ 1 MB) — `store/icon-512.png`.
+  - [x] Feature graphic 1024×500 JPEG or 24-bit PNG, **no alpha** —
+        `store/feature-graphic-1024x500.png` (RGB, no alpha channel).
   - [ ] Phone screenshots ≥ 2, 16:9 or 9:16, **max aspect 2:1** (1260×2520 is
         the safe format; 390×844 shots are rejected at 2.16:1).
   - [ ] TV screenshots 16:9 (1280×720 / 1920×1080) + banner, if the TV track is in.
