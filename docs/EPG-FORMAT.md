@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Electronic Program Guide (EPG) tells the RIOTSRADIOS player what's playing on each station, when. This document describes the v2 format that stations should use when submitting their schedules.
+The Electronic Program Guide (EPG) tells the RIOTSRADIOS player what's playing on each station, when. This document describes the v2 format.
+
+The guides are maintained in the separate [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg) repository and published through its manifest. Files under `public/EPGs/` here are the player's offline fallback.
 
 ## Key Principles
 
@@ -104,9 +106,9 @@ Use 24-hour format with leading zeros:
 
 ## File Naming
 
-Save the file in `public/EPGs/` using a descriptive name (e.g., `radio-ejemplo.json`), then put that file name in the station's `epg_file` column in `stations.csv` (e.g., `99,Radio Ejemplo,...,radio-ejemplo.json`).
+In `riotsradios-epg`, save the file in `public/EPGs/`, add it to the station's `epg_file` column in `config/stations.csv`, validate it, and rebuild the manifest. The app reads the manifest by station id.
 
-The player only loads an EPG for stations that have `epg_file` set; a station without it simply shows no EPG.
+For the bundled fallback in this repository, save the same file under `public/EPGs/` and set the station's `epg_file` in `stations.csv`. The player uses it only when the remote manifest or that station's remote guide cannot be loaded.
 
 ## Quick Example
 

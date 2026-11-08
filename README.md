@@ -22,12 +22,14 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 Works in any browser; designed for D-pad remotes on Android TV, Fire TV, etc.
 
 ## TODO
-- Weekly EPG (Electronic Program Guide) support — now with contributor-friendly v2 format using show IDs and wall-clock times
+- Expand EPG coverage across the remaining stations
 - Add more stations
 
 ## Contributing EPG Schedules
 
-RIOTSRADIOS accepts EPG schedule files for community radio stations. See `docs/EPG-FORMAT.md` for the v2 schema specification.
+EPG schedules are maintained in the separate [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg) repository. The files bundled under `public/EPGs/` are the offline fallback for the player.
+
+See `docs/EPG-FORMAT.md` for the v2 schema specification.
 
 Quick summary:
 - Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required
@@ -36,6 +38,16 @@ Quick summary:
 - Name the file descriptively (e.g. `radio-topo.json`) and point the station's `epg_file` column in `stations.csv` at it
 - Validate at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) with schema `public/EPGs/epg-schema.json`
 - Send the completed file or open a PR
+
+## EPG feed
+
+The player loads the published manifest from:
+
+```text
+https://mrhumildad.github.io/riotsradios-epg/EPGs/manifest.json
+```
+
+It loads each advertised guide from the same base URL. If the manifest or an individual guide cannot be loaded, that station falls back to its bundled `public/EPGs/<epg_file>` copy. Set `VITE_EPG_BASE_URL` to point at a staging EPG deployment without rebuilding the URLs by hand.
 
 ## Stations
 

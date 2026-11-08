@@ -5,6 +5,7 @@ import { createSpectrumAnalyzer } from './lib/spectrumAnalyzer.js'
 import { createNativeSpectrum, nativePlaybackAvailable } from './lib/nativeSpectrum.js'
 import { createNativePlaybackController } from './lib/nativePlayback.js'
 import { getCurrentShow as computeCurrentShow, getDaySchedule as computeDaySchedule } from './lib/epg.js'
+import { loadEpgData } from './lib/epgFeed.js'
 import { readIcyTitle } from './lib/icy.js'
 
 /* ICY titles cost one connection per station, so they are polled in small
@@ -180,13 +181,13 @@ export function useRadioLogic() {
   }, [])
 
   useEffect(() => {
-    stations.forEach(s => {
-      if (!s.id || !s.epg_file) return
-      fetch(`${import.meta.env.BASE_URL}EPGs/${s.epg_file}`)
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(json => setEpgData(prev => new Map(prev).set(s.id, json)))
-        .catch(() => {})
-    })
+    let disposed = false
+    loadEpgData({ stations })
+      .then((data) => {
+        if (!disposed) setEpgData(data)
+      })
+      .catch(() => {})
+    return () => { disposed = true }
   }, [])
 
   /* ICY titles for the stations whose server allows the Icy-MetaData preflight.
