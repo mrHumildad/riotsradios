@@ -1,0 +1,157 @@
+{
+  "run_at": "2026-11-08T20:26:08+00:00",
+  "counts": {
+    "new": 21
+  },
+  "changed": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    11,
+    14,
+    15,
+    17,
+    18,
+    20,
+    23,
+    26,
+    27,
+    29,
+    65,
+    66,
+    124
+  ],
+  "results": [
+    {
+      "id": "1",
+      "name": "Radio Contrabanda",
+      "status": "new",
+      "note": "html, 84,453 bytes, days=7 times=205"
+    },
+    {
+      "id": "2",
+      "name": "Radio Arrebato",
+      "status": "new",
+      "note": "html, 62,946 bytes, days=5 times=149"
+    },
+    {
+      "id": "3",
+      "name": "Radio Ciroma",
+      "status": "new",
+      "note": "pdf, 42,944 bytes"
+    },
+    {
+      "id": "4",
+      "name": "Eguzki Irratia",
+      "status": "new",
+      "note": "html, 72,264 bytes, days=7 times=125"
+    },
+    {
+      "id": "5",
+      "name": "Radio Città Fujiko",
+      "status": "new",
+      "note": "html, 106,118 bytes, days=7 times=0"
+    },
+    {
+      "id": "6",
+      "name": "Radio Bip",
+      "status": "new",
+      "note": "html, 138,340 bytes, days=7 times=10"
+    },
+    {
+      "id": "8",
+      "name": "Radiofabrik",
+      "status": "new",
+      "note": "html, 1,278,383 bytes, days=6 times=33"
+    },
+    {
+      "id": "10",
+      "name": "Radio Pica",
+      "status": "new",
+      "note": "html, 54,875 bytes, days=7 times=0"
+    },
+    {
+      "id": "11",
+      "name": "Radio Enlace",
+      "status": "new",
+      "note": "html, 712,930 bytes, days=7 times=915"
+    },
+    {
+      "id": "14",
+      "name": "Radio Malva",
+      "status": "new",
+      "note": "html, 282,611 bytes, days=5 times=22"
+    },
+    {
+      "id": "15",
+      "name": "Ké Huelga Radio",
+      "status": "new",
+      "note": "html, 47,626 bytes, days=7 times=48"
+    },
+    {
+      "id": "17",
+      "name": "Radio Libertaire",
+      "status": "new",
+      "note": "html, 58,520 bytes, days=7 times=187"
+    },
+    {
+      "id": "18",
+      "name": "Radio Topo",
+      "status": "new",
+      "note": "html, 2,530,963 bytes, days=7 times=2114"
+    },
+    {
+      "id": "20",
+      "name": "Radio Utopía",
+      "status": "new",
+      "note": "html, 222,327 bytes, days=7 times=117"
+    },
+    {
+      "id": "23",
+      "name": "Radio Almaina",
+      "status": "new",
+      "note": "html, 147,394 bytes, days=0 times=45"
+    },
+    {
+      "id": "26",
+      "name": "Radio Pimienta",
+      "status": "new",
+      "note": "html, 56,201 bytes, days=7 times=15"
+    },
+    {
+      "id": "27",
+      "name": "Radio Onda Rossa",
+      "status": "new",
+      "note": "html, 24,520 bytes, days=7 times=158"
+    },
+    {
+      "id": "29",
+      "name": "Radio Blackout",
+      "status": "new",
+      "note": "html, 509,803 bytes, days=7 times=16"
+    },
+    {
+      "id": "65",
+      "name": "Ahijuna",
+      "status": "new",
+      "note": "html, 71,420 bytes, days=7 times=0"
+    },
+    {
+      "id": "66",
+      "name": "Alba Ciudad 96.3 FM",
+      "status": "new",
+      "note": "html, 115,131 bytes, days=7 times=1"
+    },
+    {
+      "id": "124",
+      "name": "FM La Boca",
+      "status": "new",
+      "note": "html, 88,197 bytes, days=7 times=48"
+    }
+  ]
+}
