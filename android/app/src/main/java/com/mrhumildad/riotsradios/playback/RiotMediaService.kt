@@ -6,6 +6,8 @@ import android.os.Looper
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.audio.AudioProcessor
@@ -15,6 +17,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -118,6 +121,9 @@ class RiotMediaService : MediaLibraryService() {
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 hasBeenReady = false
+                /* A new station starts without a title. A rearm reloads the same
+                   stream, so its title is still true and must not blink out. */
+                if (!rearming) TrackBus.clear()
                 if (rearming) {
                     publishState()
                     return
@@ -164,6 +170,37 @@ class RiotMediaService : MediaLibraryService() {
                 publishState()
             }
 
+            /**
+             * ICY titles arrive as dynamic metadata: ExoPlayer sends
+             * `Icy-MetaData: 1`, parses the padded block and hands the title over
+             * as an [IcyInfo] entry. This is the app's whole answer to the web
+             * build's CORS problem — the socket belongs to the player, so every
+             * station reports a track here, including the ones a WebView fetch
+             * cannot preflight.
+             */
+            override fun onMetadata(metadata: Metadata) {
+                for (index in 0 until metadata.length()) {
+                    val entry = metadata.get(index)
+                    if (entry is IcyInfo) {
+                        TrackBus.publish(player.currentMediaItem?.mediaId, entry.title)
+                        return
+                    }
+                }
+            }
+
+            /**
+             * Some servers deliver the title folded into the media metadata
+             * instead. Accept it only when it is not the station name this app
+             * wrote into the item, or the row would show the station twice.
+             */
+            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                val written = player.currentMediaItem?.mediaMetadata?.title?.toString()
+                val title = mediaMetadata.title?.toString()
+                if (title != null && title != written) {
+                    TrackBus.publish(player.currentMediaItem?.mediaId, title)
+                }
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 val reason = streamErrorFor(error)
                 if (reason == "format" || reason == "mixed-content") {
@@ -192,6 +229,7 @@ class RiotMediaService : MediaLibraryService() {
         session = null
         if (::player.isInitialized) player.release()
         clearSpectrum()
+        TrackBus.clear()
         PlaybackBus.reset()
         super.onDestroy()
     }
@@ -217,6 +255,7 @@ class RiotMediaService : MediaLibraryService() {
         terminalError = "playback"
         retrying = false
         player.stop()
+        TrackBus.clear()
         clearSpectrum()
         publishState()
     }
@@ -226,6 +265,7 @@ class RiotMediaService : MediaLibraryService() {
         val forced = terminalError
         if (forced != null) {
             PlaybackBus.publish("error", forced)
+            TrackBus.clear()
             clearSpectrum()
             return
         }
@@ -246,8 +286,10 @@ class RiotMediaService : MediaLibraryService() {
             else -> "idle"
         }
         PlaybackBus.publish(state, if (state == "error") error?.let(::streamErrorFor) else null)
-        /* A stopped or failed player must not leave the last frame frozen. */
+        /* A stopped or failed player must not leave the last frame frozen, nor
+           the last song on the row. */
         if (state == "idle" || state == "error") {
+            TrackBus.clear()
             clearSpectrum()
         } else {
             spectrumMuted = false

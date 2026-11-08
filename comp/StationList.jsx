@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import StationItem from './StationItem'
 
-function StationList({ stations, currentStationIndex, isPlaying, onSelectStation, epgData, currentShows, onOpenEpg, onEditStation, onAddStation }) {
+function StationList({ stations, currentStationIndex, isPlaying, onSelectStation, epgData, currentShows, trackTitles, onOpenEpg, onEditStation, onAddStation }) {
   const listRef = useRef(null)
 
   useEffect(() => {
@@ -46,6 +46,7 @@ function StationList({ stations, currentStationIndex, isPlaying, onSelectStation
           onSelect={onSelectStation}
           hasEpg={epgData.has(station.id)}
           currentShow={currentShows.get(station.id) || null}
+          nowTitle={trackTitles?.[station.id] || ''}
           onOpenEpg={onOpenEpg}
           onEditStation={onEditStation}
          />

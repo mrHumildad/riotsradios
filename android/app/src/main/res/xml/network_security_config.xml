@@ -21,12 +21,18 @@
     </domain-config>
 
     <domain-config cleartextTrafficPermitted="true">
+        <!-- La 5ta Pata (id 91) — no https mirror -->
+        <domain includeSubdomains="false">144.91.98.151</domain>
+        <!-- Radio Saint Germain (id 96) — no https mirror -->
+        <domain includeSubdomains="false">173.255.205.241</domain>
         <!-- Ké Huelga Radio (id 15) — no https mirror -->
         <domain includeSubdomains="false">kehuelga.net</domain>
         <!-- Radio Libertaire (id 17) — no https mirror -->
         <domain includeSubdomains="false">media.radio-libertaire.org</domain>
         <!-- Radio Malva (id 14) — no https mirror -->
         <domain includeSubdomains="false">radiomalva.ddns.net</domain>
+        <!-- Radio Caroline (id 123) — no https mirror -->
+        <domain includeSubdomains="false">sc6.radiocaroline.net</domain>
         <!-- Radio Utopía (id 20) — no https mirror -->
         <domain includeSubdomains="false">streaming.radioutopia.es</domain>
     </domain-config>

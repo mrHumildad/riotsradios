@@ -143,7 +143,7 @@ async function main() {
     }
 
     /* Links are rendered into the page, so clamp them to http(s). */
-    for (const field of ['webpage', 'icon', 'epg_url']) {
+    for (const field of ['homepage', 'favicon', 'epg_url']) {
       const value = station[field]
       if (value && !isHttpUrl(value)) {
         fail(line, `${label(station)}: ${field} must start with http:// or https:// — ${JSON.stringify(value)}`)
@@ -159,6 +159,21 @@ async function main() {
         warn(line, `${label(station)}: ${field} contains whitespace/newline — ${JSON.stringify(value)}`)
       } else if (!value.startsWith(prefix)) {
         warn(line, `${label(station)}: ${field} must start with ${prefix} — ${JSON.stringify(value)}`)
+      }
+    }
+
+    /* API-shaped metadata: the shapes are checked so a hand edit cannot smuggle
+       in a value the player would misread. A blank field is always fine. */
+    if (station.countrycode && !/^[A-Z]{2}$/.test(station.countrycode)) {
+      warn(line, `${label(station)}: countrycode should be a two-letter ISO code — ${JSON.stringify(station.countrycode)}`)
+    }
+    if (station.bitrate && !/^\d+$/.test(station.bitrate)) {
+      warn(line, `${label(station)}: bitrate should be whole kbps — ${JSON.stringify(station.bitrate)}`)
+    }
+    for (const field of ['hls', 'lastcheckok']) {
+      const value = station[field]
+      if (value && !/^[01]$/.test(value)) {
+        warn(line, `${label(station)}: ${field} is "0" or "1" — ${JSON.stringify(value)}`)
       }
     }
 

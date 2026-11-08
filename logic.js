@@ -5,6 +5,15 @@ import { createSpectrumAnalyzer } from './lib/spectrumAnalyzer.js'
 import { createNativeSpectrum, nativePlaybackAvailable } from './lib/nativeSpectrum.js'
 import { createNativePlaybackController } from './lib/nativePlayback.js'
 import { getCurrentShow as computeCurrentShow, getDaySchedule as computeDaySchedule } from './lib/epg.js'
+import { readIcyTitle } from './lib/icy.js'
+
+/* ICY titles cost one connection per station, so they are polled in small
+   batches. The selected station refreshes fastest; a station that refuses the
+   Icy-MetaData preflight a couple of times is left alone until reload. */
+const TRACK_REFRESH_MS = 90_000
+const TRACK_REFRESH_ACTIVE_MS = 30_000
+const TRACK_BATCH = 3
+const TRACK_GIVE_UP_AFTER = 2
 
 /* Inside the Capacitor app the page origin is the local server (http://localhost),
    so the probe's `cors: "origin"` entries — pinned to the GitHub Pages origin — no
@@ -30,6 +39,9 @@ export function useRadioLogic() {
   const controllerReadyRef = useRef(null)   /* Promise<controller|null> */
   const currentIndexRef = useRef(0)
   const volumeRef = useRef(0.8)
+  /* The station whose title the native player currently owns: Media3 hears the
+     stream directly, so the web poller must not overwrite it with a blank. */
+  const nativeTrackIdRef = useRef(null)
 
   const [currentStationIndex, setCurrentStationIndex] = useState(0)
   const [playbackState, setPlaybackState] = useState('idle')   /* idle | loading | playing | stalled | error */
@@ -39,6 +51,7 @@ export function useRadioLogic() {
   const [stationHasError, setStationHasError] = useState(false)
   const [streamError, setStreamError] = useState(null)
   const [epgData, setEpgData] = useState(new Map())
+  const [nowPlaying, setNowPlaying] = useState(new Map())
   const [timeTick, setTimeTick] = useState(0)
 
   const applyState = useCallback((next) => {
@@ -94,7 +107,25 @@ export function useRadioLogic() {
       if (disposed) return null
 
       if (native) {
-        controller = createNativePlaybackController({ onState: applyState, onStreamError: setStreamError })
+        controller = createNativePlaybackController({
+          onState: applyState,
+          onStreamError: setStreamError,
+          /* Every station reaches its title here, CORS or not, because the
+             player owns the socket. `id` is the station the player tagged. */
+          onTrack: (title, id) => {
+            const key = Number(id)
+            if (!Number.isInteger(key)) return
+            nativeTrackIdRef.current = title
+              ? key
+              : nativeTrackIdRef.current === key ? null : nativeTrackIdRef.current
+            setNowPlaying((prev) => {
+              const next = new Map(prev)
+              if (title) next.set(key, { title, at: Date.now() })
+              else next.delete(key)
+              return next
+            })
+          },
+        })
         spectrumSourceRef.current = 'native'
         spectrumRef.current?.close()
         spectrumRef.current = createNativeSpectrum()
@@ -128,6 +159,7 @@ export function useRadioLogic() {
       spectrumRef.current?.close()
       spectrumRef.current = null
       spectrumSourceRef.current = 'web'
+      nativeTrackIdRef.current = null
       audioRef.current = null
     }
   }, [applyState])
@@ -155,6 +187,73 @@ export function useRadioLogic() {
         .then(json => setEpgData(prev => new Map(prev).set(s.id, json)))
         .catch(() => {})
     })
+  }, [])
+
+  /* ICY titles for the stations whose server allows the Icy-MetaData preflight.
+     Nothing is invented: a station that cannot be read simply has no entry. */
+  useEffect(() => {
+    let disposed = false
+    const titles = new Map()    /* id -> { title, at } */
+    const attempts = new Map()  /* id -> last try (ms) */
+    const failures = new Map()  /* id -> consecutive unreadable reads */
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+    const publish = () => {
+      if (!disposed) setNowPlaying(new Map(titles))
+    }
+    const activeId = () => stations[currentIndexRef.current]?.id
+    const eligible = stations.filter(
+      (station) => typeof station.url === 'string' && station.url.startsWith('https://')
+    )
+    const due = (station) => {
+      const ttl = station.id === activeId() ? TRACK_REFRESH_ACTIVE_MS : TRACK_REFRESH_MS
+      return Date.now() - (attempts.get(station.id) || 0) >= ttl
+    }
+
+    const pump = async () => {
+      while (!disposed) {
+        /* A background tab neither needs titles nor should spend the bandwidth. */
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          await sleep(5000)
+          continue
+        }
+        const pending = eligible
+          .filter((station) =>
+            (failures.get(station.id) || 0) < TRACK_GIVE_UP_AFTER &&
+            station.id !== nativeTrackIdRef.current &&
+            due(station)
+          )
+          .sort((a, b) => (a.id === activeId() ? -1 : b.id === activeId() ? 1 : 0))
+        if (pending.length === 0) {
+          await sleep(1500)
+          continue
+        }
+        await Promise.all(
+          pending.slice(0, TRACK_BATCH).map(async (station) => {
+            attempts.set(station.id, Date.now())
+            const title = await readIcyTitle(station.url)
+            if (disposed) return
+            if (title) {
+              failures.delete(station.id)
+              const previous = titles.get(station.id)
+              if (previous?.title !== title) {
+                titles.set(station.id, { title, at: Date.now() })
+                publish()
+              } else {
+                titles.set(station.id, { title, at: Date.now() })
+              }
+            } else {
+              failures.set(station.id, (failures.get(station.id) || 0) + 1)
+            }
+          })
+        )
+        await sleep(250)
+      }
+    }
+
+    pump()
+    return () => {
+      disposed = true
+    }
   }, [])
 
   const currentShows = useMemo(() => {
@@ -248,6 +347,7 @@ export function useRadioLogic() {
     stationHasError,
     streamError,
     epgData,
+    nowPlaying,
     currentShows,
     getDaySchedule,
     selectStation,

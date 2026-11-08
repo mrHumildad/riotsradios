@@ -269,7 +269,7 @@ function StationEditModal({ station, nextId, onClose, onSaved, onDeleted }) {
                       onChange={(event) => setField(column.key, event.target.value)}
                     />
                     {column.hint && <p className="station-edit-hint">{column.hint}</p>}
-                    {column.key === 'icon' && <IconPreview url={values.icon} />}
+                    {column.key === 'favicon' && <IconPreview url={values.favicon} />}
                   </div>
                 )
               })}

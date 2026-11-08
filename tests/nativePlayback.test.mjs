@@ -4,9 +4,10 @@ import {
   createNativePlaybackController,
   NATIVE_STATES,
   STATE_EVENT,
+  TRACK_EVENT,
 } from '../lib/nativePlayback.js'
 
-const STATION = { id: 12, name: 'Radio Topo', location: 'Zaragoza, Spain', icon: 'https://x/y.png' }
+const STATION = { id: 12, name: 'Radio Topo', state: 'Zaragoza', country: 'Spain', favicon: 'https://x/y.png' }
 const URL = 'https://stream.example/s.mp3'
 
 function fakeBridge() {
@@ -15,6 +16,8 @@ function fakeBridge() {
   return {
     listeners,
     calls,
+    /* Nothing is playing by default: no title, no station. */
+    getTrack: () => Promise.resolve({ title: '', id: '' }),
     playStation(payload) {
       calls.playStation.push(payload)
       return Promise.resolve({ ok: true })
@@ -50,12 +53,14 @@ function setup() {
   const bridge = fakeBridge()
   const states = []
   const errors = []
+  const tracks = []
   const controller = createNativePlaybackController({
     bridge,
     onState: (state) => states.push(state),
     onStreamError: (reason) => errors.push(reason),
+    onTrack: (title, id) => tracks.push({ title, id }),
   })
-  return { bridge, controller, states, errors }
+  return { bridge, controller, states, errors, tracks }
 }
 
 test('subscribes to the session state event', async () => {
@@ -183,13 +188,86 @@ test('a rejected playStation call becomes a playback error', async () => {
   assert.equal(controller.getState(), 'error')
 })
 
+test('an ICY title from the player is reported with its station', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(TRACK_EVENT, { title: 'Mika y su Kilombo', id: '12' })
+
+  assert.deepEqual(tracks, [{ title: 'Mika y su Kilombo', id: '12' }])
+})
+
+test('a title is attributed to the playing station when the bridge omits the id', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(TRACK_EVENT, { title: 'Radio Topo' })
+
+  assert.deepEqual(tracks, [{ title: 'Radio Topo', id: '12' }])
+})
+
+test('a title that belongs to another station is ignored', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(TRACK_EVENT, { title: 'Wrong station', id: '71' })
+
+  assert.deepEqual(tracks, [])
+})
+
+test('a blank title clears the track instead of showing an empty line', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(TRACK_EVENT, { title: '   ', id: '12' })
+
+  assert.deepEqual(tracks, [{ title: null, id: '12' }])
+})
+
+test('switching stations drops the title of the station we left', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(TRACK_EVENT, { title: 'Song A', id: '12' })
+  controller.play(URL, { station: { ...STATION, id: 71, name: 'Zoy Milton' } })
+
+  assert.deepEqual(tracks, [
+    { title: 'Song A', id: '12' },
+    { title: null, id: '12' },
+  ])
+  assert.equal(controller.getState(), 'loading')
+})
+
+test('stop() clears the title and stops owning the station', () => {
+  const { bridge, controller, tracks } = setup()
+
+  controller.play(URL, { station: STATION })
+  controller.stop()
+  bridge.emit(TRACK_EVENT, { title: 'Late block', id: '12' })
+
+  assert.deepEqual(tracks, [{ title: null, id: '12' }])
+})
+
+test('a title already playing is adopted when the page attaches late', async () => {
+  const bridge = fakeBridge()
+  bridge.getTrack = () => Promise.resolve({ title: 'Nirvana - Jesus Don', id: '121' })
+  const tracks = []
+  createNativePlaybackController({ bridge, onTrack: (title, id) => tracks.push({ title, id }) })
+
+  await Promise.resolve()
+  await Promise.resolve()
+
+  assert.deepEqual(tracks, [{ title: 'Nirvana - Jesus Don', id: '121' }])
+})
+
 test('destroy() detaches the listener and stops the session', async () => {
   const { bridge, controller } = setup()
   await Promise.resolve()
 
   controller.destroy()
 
-  assert.equal(bridge.calls.removed, 1)
+  /* state + track */
+  assert.equal(bridge.calls.removed, 2)
   assert.equal(bridge.calls.stop, 1)
   assert.equal(bridge.listeners.size, 0)
 

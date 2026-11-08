@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react'
 import { healthBadge } from '../lib/health.js'
+import { stationPlace } from '../lib/stations.js'
 
-function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, hasEpg, onOpenEpg, onEditStation }) {
+/* The API metadata a listener can use, on one muted line: country code, codec,
+   bitrate and the station's own tags. Every part is optional — a row with bare
+   metadata just shows fewer parts, and a row with none shows no line at all. */
+function stationMeta(station) {
+  const codec = String(station.codec || '').trim()
+  const kbps = String(station.bitrate || '').trim()
+  /* radio-browser stores tags comma-separated without spaces. */
+  const tags = String(station.tags || '').replace(/\s*,\s*/g, ', ').trim()
+  return [station.countrycode, codec, kbps && `${kbps} kbps`, tags]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' · ')
+}
+
+function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, nowTitle, hasEpg, onOpenEpg, onEditStation }) {
   const [showEpgName, setShowEpgName] = useState(false)
   /* The icon is a remote image. A dead URL hides it, and editing the URL must be
      able to bring it back — so the failure is component state that resets when
      the URL changes, never a style set on the DOM node by the error handler. */
   const [iconFailed, setIconFailed] = useState(false)
   const badge = healthBadge(station.health)
+  const place = stationPlace(station)
+  const meta = stationMeta(station)
 
   useEffect(() => {
     setIconFailed(false)
-  }, [station.icon])
+  }, [station.favicon])
 
   useEffect(() => {
     if (!currentShow) {
@@ -45,10 +62,10 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
       <div className="station-num">{String(index + 1).padStart(2, '0')}</div>
 
       <div className="station-body">
-        {station.icon && !iconFailed && (
+        {station.favicon && !iconFailed && (
           <img
-            key={station.icon}
-            src={station.icon}
+            key={station.favicon}
+            src={station.favicon}
             alt=""
             width="34"
             height="34"
@@ -69,7 +86,13 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
               <span className="station-name-line">{station.name || '(unlisted)'}</span>
             )}
           </div>
-          {station.location && <div className="station-location-line">{station.location}</div>}
+          {nowTitle && (
+            <div className="station-now-line" title={`Now playing: ${nowTitle}`}>
+              ♪ {nowTitle}
+            </div>
+          )}
+          {place && <div className="station-location-line">{place}</div>}
+          {meta && <div className="station-meta-line" title={meta}>{meta}</div>}
           {badge && badge.tone !== 'ok' && (
             <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
           )}
@@ -96,9 +119,9 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
             EPG
           </button>
         )}
-        {station.webpage && (
+        {station.homepage && (
           <a
-            href={station.webpage}
+            href={station.homepage}
             target="_blank"
             rel="noopener noreferrer"
             className="homepage-btn"

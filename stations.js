@@ -93,8 +93,8 @@ function logCatalogReport(rows, isPlayable) {
       name: e.name,
       stream: e.scheme || '—',
       mirrors: [e.mirrorHttp && 'http', e.mirrorHttps && 'https'].filter(Boolean).join('+') || '—',
-      icon: e.icon ? 'yes' : '—',
-      web: e.webpage ? 'yes' : '—',
+      icon: e.favicon ? 'yes' : '—',
+      web: e.homepage ? 'yes' : '—',
       mail: e.mailto ? 'yes' : '—',
       eps: e.epg ? 'yes' : '—',
       health: e.health || '—',
@@ -125,13 +125,14 @@ function mirrorLine(e, scheme) {
 function logStationFields(e) {
   console.log('catalog line  ', e.line)
   console.log('status        ', `${e.hidden ? 'hidden' : 'active'} · ${e.playable ? 'playable' : 'not playable'}`)
-  console.log('location      ', e.location || '—')
+  console.log('place         ', e.place || '—')
+  console.log('country       ', [e.country, e.countrycode].filter(Boolean).join(' / ') || '—')
   console.log('stream        ', e.url || '—')
   console.log('stream scheme ', e.scheme || '—')
   console.log('http mirror   ', mirrorLine(e, 'http'))
   console.log('https mirror  ', mirrorLine(e, 'https'))
-  console.log('webpage       ', e.webpage || '—')
-  console.log('icon          ', e.icon || '—')
+  console.log('homepage      ', e.homepage || '—')
+  console.log('favicon       ', e.favicon || '—')
   console.log('mailto        ', e.mailto || '—')
   console.log('epg           ', e.epg || '—')
   console.log('health        ', e.health || 'not probed')

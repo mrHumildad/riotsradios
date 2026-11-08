@@ -6,7 +6,7 @@ import { useSpectrum } from './useSpectrum.js'
    ───────────────────────────────────────────────── */
 function PlayerDashboard({
   currentStationName, currentStationIndex, playbackState, canAnalyze,
-  volume, currentShow, stationHasError, streamError, spectrumRef,
+  volume, currentShow, currentTrack, stationHasError, streamError, spectrumRef,
   onTogglePlay, onChangeVolume, onPrevStation, onNextStation,
 }) {
   const isIdle    = currentStationIndex === null
@@ -62,6 +62,10 @@ function PlayerDashboard({
       <div className="crt-display" aria-label="Current station">
         <span id="current-station" className={displayClass}>{crtText}</span>
       </div>
+
+      {currentTrack && !hasError && (
+        <div className="crt-track" title={`Now playing: ${currentTrack}`}>♪ {currentTrack}</div>
+      )}
 
 
       <div

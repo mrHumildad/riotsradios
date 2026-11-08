@@ -1314,6 +1314,30 @@ input[type="range"]::-moz-range-track {
   line-height: 1.5;
 }
 
+/* the stream's own ICY title, only for stations that expose it */
+.station-now-line {
+  font-size: 0.62rem;
+  color: var(--warm-gray);
+  letter-spacing: .05em;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
+/* catalogue metadata: country code · codec · bitrate · tags */
+.station-meta-line {
+  font-size: 0.6rem;
+  color: var(--warm-gray);
+  opacity: .72;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
 /* Station body — icon + name+location, stacked, in middle column */
 .station-body {
   display: flex;
@@ -2090,6 +2114,8 @@ input[type="range"]::-moz-range-track {
   .station-item { min-height: 62px; }
   .station-name-line { font-size: 1.02rem; }
   .station-location-line { font-size: 0.78rem; }
+  .station-meta-line { font-size: 0.7rem; }
+  .station-now-line { font-size: 0.74rem; }
   .soundbar-bars { height: clamp(70px, 16vh, 170px); }
   .crt-display { font-size: clamp(1.1rem, 1.5vw, 1.7rem); }
   .station-item:focus-visible { outline-width: 3px; outline-offset: 3px; }
@@ -2104,6 +2130,8 @@ input[type="range"]::-moz-range-track {
   .station-item { min-height: 74px; }
   .station-name-line { font-size: 1.18rem; }
   .station-location-line { font-size: 0.9rem; }
+  .station-meta-line { font-size: 0.8rem; }
+  .station-now-line { font-size: 0.84rem; }
   .soundbar-bars { height: clamp(90px, 18vh, 220px); }
 }
 
@@ -2112,6 +2140,8 @@ input[type="range"]::-moz-range-track {
   .station-item { min-height: 88px; }
   .station-name-line { font-size: 1.35rem; }
   .station-location-line { font-size: 1rem; }
+  .station-meta-line { font-size: 0.88rem; }
+  .station-now-line { font-size: 0.92rem; }
 }
 
 /* =========================================================

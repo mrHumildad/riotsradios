@@ -282,6 +282,13 @@ the session and mirrors `onMediaItemTransition`, `onPlaybackStateChanged` and
 | Car: volume keys | car media stream; the in-app slider stays a per-app gain (`ExoPlayer.setVolume`) |
 | Phone app killed | car keeps playing; reopening the app re-syncs from the session |
 
+The song title comes from the player, not from the page: `RiotMediaService` reads
+the `IcyInfo` entry ExoPlayer decodes and publishes it on `TrackBus`, so every
+station reports a track on Android — including the ones a WebView fetch cannot
+reach, because the server refuses the `Icy-MetaData` CORS preflight
+(`lib/icy.js`). `lib/nativePlayback.js` attributes the title to the station the
+player tagged and `logic.js` skips the web poller for that station.
+
 Capacitor plugin surface (small on purpose — the phone never sends URLs):
 
 ```
@@ -290,6 +297,8 @@ RiotsPlayback.stop()
 RiotsPlayback.next() / previous()
 RiotsPlayback.setStateListener()       → { state, mediaId, title, subtitle }
 RiotsPlayback.getState()               → same object
+RiotsPlayback.addListener('track')     → { id, title }, on each new ICY title
+RiotsPlayback.getTrack()               → same object, for a page that attaches late
 ```
 
 ## 11. Manifest and Gradle checklist

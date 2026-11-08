@@ -21,9 +21,13 @@ import com.getcapacitor.annotation.PermissionCallback
 import com.google.common.util.concurrent.ListenableFuture
 import com.mrhumildad.riotsradios.playback.PlaybackBus
 import com.mrhumildad.riotsradios.playback.RiotMediaService
+import com.mrhumildad.riotsradios.playback.TrackBus
 
 /* File-level so the @CapacitorPlugin annotation can reference it. */
 private const val ALIAS_NOTIFICATIONS = "notifications"
+
+/* Prefix of the item's mediaId; the page keys its stations by the bare id. */
+private const val MEDIA_ID_PREFIX = "station:"
 
 /**
  * Capacitor bridge between the WebView and the native Media3 session.
@@ -63,16 +67,26 @@ class RiotsPlaybackPlugin : Plugin() {
         }
     }
 
+    /* The ICY title the service decoded from the stream. Empty means "no track
+       for this station", which the page shows as no line at all. */
+    private val trackListener: (TrackBus.Track?) -> Unit = { track ->
+        if (hasListeners(EVENT_TRACK)) {
+            activity?.runOnUiThread { notifyListeners(EVENT_TRACK, trackPayload(track)) }
+        }
+    }
+
     override fun load() {
         super.load()
         SpectrumBus.addListener(spectrumListener)
         PlaybackBus.addListener(stateListener)
+        TrackBus.addListener(trackListener)
         connect()
     }
 
     override fun handleOnDestroy() {
         SpectrumBus.removeListener(spectrumListener)
         PlaybackBus.removeListener(stateListener)
+        TrackBus.removeListener(trackListener)
         controller = null
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
@@ -90,6 +104,8 @@ class RiotsPlaybackPlugin : Plugin() {
                 if (connected != null) {
                     controller = connected
                     publishState()
+                    /* The page may attach while a stream is already playing. */
+                    trackListener(TrackBus.latest)
                 }
             },
             ContextCompat.getMainExecutor(context)
@@ -135,10 +151,11 @@ class RiotsPlaybackPlugin : Plugin() {
     fun stop(call: PluginCall) {
         withController(call) { native ->
             /* The stop rule from lib/playbackController.js: release everything,
-               do not leave a notification or a socket behind. */
+               do not leave a notification, a socket or a stale song behind. */
             native.stop()
             native.clearMediaItems()
             SpectrumBus.clear()
+            TrackBus.clear()
             PlaybackBus.reset()
         }
     }
@@ -163,6 +180,12 @@ class RiotsPlaybackPlugin : Plugin() {
             .put("ageMs", SpectrumBus.ageMillis())
         if (levels != null) result.put("levels", toJsArray(levels))
         call.resolve(result)
+    }
+
+    /** Latest ICY title, for a page that attaches after playback started. */
+    @PluginMethod
+    fun getTrack(call: PluginCall) {
+        call.resolve(trackPayload(TrackBus.latest))
     }
 
     @PluginMethod
@@ -257,6 +280,12 @@ class RiotsPlaybackPlugin : Plugin() {
         return payload
     }
 
+    private fun trackPayload(track: TrackBus.Track?): JSObject {
+        val payload = JSObject().put("title", track?.title ?: "")
+        track?.mediaId?.removePrefix(MEDIA_ID_PREFIX)?.let { payload.put("id", it) }
+        return payload
+    }
+
     private fun toJsArray(levels: FloatArray): JSArray {
         val array = JSArray()
         for (level in levels) array.put(level.toDouble())
@@ -267,5 +296,6 @@ class RiotsPlaybackPlugin : Plugin() {
         const val ALBUM = "RIOTSRADIOS"
         const val EVENT_SPECTRUM = "spectrum"
         const val EVENT_STATE = "state"
+        const val EVENT_TRACK = "track"
     }
 }

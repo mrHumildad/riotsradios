@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useReducer } from 'react'
+import { useState, useEffect, useCallback, useMemo, useReducer } from 'react'
 import { useRadioLogic } from './logic.js'
 import { stations, refreshStations } from './stations.js'
 import logoPng from '/logob_transp_ffc107.png'
@@ -6,6 +6,7 @@ import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
 import EPGModal from './comp/EPGModal.jsx'
 import StationEditModal from './comp/StationEditModal.jsx'
+import { isFreshTitle } from './lib/icy.js'
 import { version } from './package.json'
 function App() {
 const {
@@ -18,6 +19,7 @@ const {
     stationHasError,
     streamError,
     epgData,
+    nowPlaying,
     currentShows,
     getDaySchedule,
     selectStation,
@@ -34,6 +36,17 @@ const {
   
   const currentStationObject = currentStationIndex !== null ? stations[currentStationIndex] : null
   const currentShow = currentStationObject ? currentShows.get(currentStationObject.id) || null : null
+
+  /* Stream titles go stale: a station whose reader stopped answering is shown
+     without a track rather than with the last one it ever played. */
+  const trackTitles = useMemo(() => {
+    const out = {}
+    nowPlaying.forEach((entry, id) => {
+      if (isFreshTitle(entry)) out[id] = entry.title
+    })
+    return out
+  }, [nowPlaying])
+  const currentTrack = currentStationObject ? trackTitles[currentStationObject.id] || '' : ''
 
   const currentStationName = currentStationIndex === null
     ? '-'
@@ -231,6 +244,7 @@ const {
          playbackState={playbackState}
          volume={volume}
          currentShow={currentShow}
+         currentTrack={currentTrack}
          stationHasError={stationHasError}
          streamError={streamError}
          onTogglePlay={togglePlay}
@@ -246,6 +260,7 @@ const {
         onSelectStation={selectStation}
         epgData={epgData}
         currentShows={currentShows}
+        trackTitles={trackTitles}
         onOpenEpg={setEpgModalStation}
         onEditStation={openEditor}
         onAddStation={openCreator}

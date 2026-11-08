@@ -45,8 +45,8 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
       >
         <div className="epg-modal-header">
           <div className="epg-modal-station">
-            {station.icon && (
-              <img src={station.icon} alt="" className="epg-modal-icon" />
+            {station.favicon && (
+              <img src={station.favicon} alt="" className="epg-modal-icon" />
             )}
             <span className="epg-modal-name">{station.name}</span>
           </div>
