@@ -17,14 +17,20 @@ hardcode a station, a stream URL or a station name in a component.
 | `name` | Display name (required for an active station) |
 | `stream_broken` | `""` (empty) or `true`. `true` = hidden from the player, kept for the record |
 | `has_ads` | Free-form marker already in the data; it does not change playback |
-| `location` | Human-readable place, e.g. `Barri Gotic, Barcelona` |
-| `webpage` | Station site, must be `http(s)://` |
+| `country` | Country name as radio-browser reports it — e.g. `Spain` |
+| `countrycode` | Two-letter ISO 3166-1 code — e.g. `ES` |
+| `state` | The human place shown in the list, e.g. `9Barris, Barcelona` (radio-browser's field name for it) |
 | `url` | The stream the player loads. Required for an active row, `http(s)://`, no whitespace |
 | `url_http` | The station's plain-HTTP mirror, if known. `http://` only; stored, never played by the web build |
 | `url_https` | The station's HTTPS mirror, if known. `https://` only; stored |
-| `icon` | Station image URL, must be `http(s)://` |
-| `epg_url` | Optional external schedule URL, must be `http(s)://` |
-| `epg_file` | File name inside `public/EPGs/` (e.g. `topo.json`); the player only loads a guide for a station that sets it |
+| `homepage` | Station site, must be `http(s)://` |
+| `favicon` | Station image URL, must be `http(s)://` |
+| `tags` | Comma-separated keywords, as radio-browser stores them (quoted CSV field) |
+| `codec` | Stream codec — `MP3`, `AAC`, `OGG`… blank when unknown |
+| `bitrate` | Stream bitrate in kbps — blank when unknown |
+| `hls` | `1` when the station publishes HLS, `0` otherwise |
+| `lastcheckok` | radio-browser's own last check, `1`/`0` — not our probe |
+| `epg_file` | Bundled fallback file inside `public/EPGs/` (e.g. `radio-topo.json`); the published manifest is loaded first |
 | `mailto` | Contact address, free-form |
 
 `url_http` / `url_https` record both mirrors of one stream. **Nothing switches
@@ -33,6 +39,14 @@ it equal to the mirror listeners should hear. A mirror with the wrong scheme or
 whitespace is a warning, not an error — mirrors are never rendered. The health
 probe checks `url` and every stored mirror and files the mirrors under
 `mirrors.http` / `mirrors.https` in `data/health.json`.
+
+Column names follow the radio-browser station object (`homepage`, `favicon`,
+`country`, `countrycode`, `state`, `tags`, `codec`, `bitrate`, `hls`,
+`lastcheckok`), so an API record maps onto a row field-for-field. The columns the
+API has no concept of keep local names: `id` (the player identity and the
+`data/health.json` key), `stream_broken`, the two mirrors, `epg_file` and `mailto`.
+`lastcheckok` is radio-browser's own verdict at enrichment time — the badges a
+listener sees still come from `data/health.json`.
 
 Required columns (build fails without them): `id`, `name`, `stream_broken`, `url`.
 
@@ -53,7 +67,7 @@ Errors block the build (`prebuild` runs it, so `npm run build` fails):
 - **an active `http://` stream** — browsers block mixed content on the HTTPS site,
   and Capacitor serves over https too; use an `https://` mirror or the relay,
 - duplicate stream URL between active rows,
-- `webpage` / `icon` / `epg_url` not starting with `http(s)://` (they are rendered
+- `homepage` / `favicon` not starting with `http(s)://` (they are rendered
   into the page),
 - `epg_file` that does not exist in `public/EPGs/`.
 
@@ -158,7 +172,12 @@ a frozen `currentTime`, and 3 retries at 1/2/4 s. It owns the single
 - A station that keeps landing in `stalled`/`error` is a catalog problem: fix the
   URL or mark it `stream_broken`. Do not paper over it by loosening the retries.
 
-## EPG v2 — `public/EPGs/`
+## EPG v2 — published feed and `public/EPGs/`
+
+The guides are owned by the separate `riotsradios-epg` repository, which runs the
+fetch/convert pipeline, publishes `manifest.json` and serves the JSON on GitHub
+Pages. The app fetches the manifest first and uses `public/EPGs/` only as the
+per-station fallback. Do not add fetch/convert scripts here.
 
 Public format guide: `docs/EPG-FORMAT.md`. Schema:
 `public/EPGs/epg-schema.json` (also used for the online validator); starting point:
@@ -187,8 +206,8 @@ Public format guide: `docs/EPG-FORMAT.md`. Schema:
 Rules — errors block CI (`npm run validate:epg`):
 
 - `version` must be `"2.0"` (anything else downgrades every check to a warning).
-- `station_id` must match the station that owns the file in `stations.csv` (the
-  validator derives ownership from `epg_file`); a mismatch is an error.
+- `station_id` must match the station that owns the bundled file in `stations.csv`
+  (the validator derives ownership from `epg_file`); a mismatch is an error.
 - `timezone` must be a valid IANA zone — a missing one falls back to UTC with a
   warning, which silently shifts a Spanish schedule by an hour or two.
 - `days[].day` must be one of `sunday … saturday`; times are `HH:MM` 24 h (`24:00`
@@ -204,8 +223,9 @@ Rules — errors block CI (`npm run validate:epg`):
 Warnings: empty `programs` for a day, an unknown `category` key, a missing
 `station_id`.
 
-File name: descriptive, e.g. `radio-topo.json`; then set the station's `epg_file` in
-`stations.csv`. The player loads a guide only for stations that set it.
+File name: descriptive, e.g. `radio-topo.json`; set the station's `epg_file` in
+`stations.csv` to the bundled copy. The app loads the remote guide first and falls
+back to that file when the manifest or guide is unavailable.
 
 ## Gates and tests
 
@@ -213,7 +233,7 @@ File name: descriptive, e.g. `radio-topo.json`; then set the station's `epg_file
 |---|---|
 | `npm run dev` | the player; in dev each row has EDIT, which writes `stations.csv` and runs the validator |
 | `npm run validate:stations` | catalog (also runs on `prebuild`) |
-| `npm run validate:epg` | every `public/EPGs/*.json` |
+| `npm run validate:epg` | every bundled `public/EPGs/*.json` |
 | `npm test` | `tests/*.test.mjs`: `audioBands`, `epg`, `health`, `playbackController`, `spectrumAnalyzer` |
 | `npm run probe:health` | rewrites `data/health.json` (network) |
 
@@ -231,3 +251,5 @@ needs its unit test updated in the same commit — those modules are pure on pur
 - The spectrum may be real or `SIM`, never a fabricated animation presented as real.
 - Station content and EPG schedules belong to the stations: keep `source`,
   `contact` and attribution intact when editing a guide file.
+- The fetch/convert pipeline belongs to `riotsradios-epg`; this repository ships
+  only the fallback JSON and its validator.

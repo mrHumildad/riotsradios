@@ -36,7 +36,7 @@ The guides are maintained in the separate [riotsradios-epg](https://github.com/m
 |-------|-------------|
 | `version` | Must be `"2.0"` |
 | `station` | Human-readable station name |
-| `station_id` | Integer matching the ID in `stations.js` |
+| `station_id` | Integer matching the station ID in the app's `stations.csv` and the EPG repo's `config/stations.csv` |
 | `timezone` | IANA timezone (e.g., `Europe/Madrid`, `America/New_York`) |
 | `days` | Array of 7 day objects (or fewer if partial schedule) |
 
@@ -80,8 +80,8 @@ Reference shows by ID:
 
 ## Validation
 
-1. **Online**: Paste your JSON at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) and select this schema.
-2. **CLI**: Run `node scripts/validate-epgs.js` (after implementation).
+1. **Online**: Paste your JSON at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) and select `public/EPGs/epg-schema.json`.
+2. **CLI**: In `riotsradios-epg`, run `npm run check` to validate generated guides and the manifest. In this repository, `npm run validate:epg` checks the bundled fallback copies.
 
 ## Categories
 

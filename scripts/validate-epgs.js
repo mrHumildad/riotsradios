@@ -1,7 +1,8 @@
-// EPG validator
-// Run: node scripts/validate-epgs.js   (or `npm run validate:epg`)
+// Bundled EPG fallback validator
+// Run: npm run validate:epg
 //
-// Errors block CI; warnings are informational. Checks structure, clock ranges,
+// The published guides live in riotsradios-epg. This validates the copies shipped
+// in public/EPGs/ for offline and CORS-failure fallback: structure, clock ranges,
 // duplicates, overlaps, show references, station_id ownership, timezone and
 // unknown categories.
 

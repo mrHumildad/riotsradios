@@ -34,10 +34,9 @@ See `docs/EPG-FORMAT.md` for the v2 schema specification.
 Quick summary:
 - Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required
 - Define unique shows once in the `shows` catalog and reference them by `show_id` in daily grids
-- Copy `public/EPGs/template.json` and fill in your schedule
-- Name the file descriptively (e.g. `radio-topo.json`) and point the station's `epg_file` column in `stations.csv` at it
-- Validate at [jsonschemavalidator.net](https://www.jsonschemavalidator.net/) with schema `public/EPGs/epg-schema.json`
-- Send the completed file or open a PR
+- Copy the template from `riotsradios-epg`, add the guide under its `public/EPGs/`, and point `config/stations.csv` at it
+- Validate it there and rebuild the manifest; open a PR against `riotsradios-epg`
+- Keep the same file in this repository's `public/EPGs/` as the offline fallback and run `npm run validate:epg`
 
 ## EPG feed
 

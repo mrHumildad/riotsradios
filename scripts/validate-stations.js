@@ -143,7 +143,7 @@ async function main() {
     }
 
     /* Links are rendered into the page, so clamp them to http(s). */
-    for (const field of ['homepage', 'favicon', 'epg_url']) {
+    for (const field of ['homepage', 'favicon']) {
       const value = station[field]
       if (value && !isHttpUrl(value)) {
         fail(line, `${label(station)}: ${field} must start with http:// or https:// — ${JSON.stringify(value)}`)
