@@ -26,11 +26,6 @@
       "note": "La 5ta Pata (id 91) — no https mirror"
     },
     {
-      "host": "173.255.205.241",
-      "station_ids": [96],
-      "note": "Radio Saint Germain (id 96) — no https mirror"
-    },
-    {
       "host": "sc6.radiocaroline.net",
       "station_ids": [123],
       "note": "Radio Caroline (id 123) — no https mirror"

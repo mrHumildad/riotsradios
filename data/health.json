@@ -1041,28 +1041,6 @@
       }
     }
   },
-  "96": {
-    "status": "http_only",
-    "cors": "any",
-    "http_code": 200,
-    "content_type": "audio/mpeg",
-    "latency_ms": 252,
-    "checked_at": "2026-11-07T21:29:29.046Z",
-    "consecutive_failures": 0,
-    "last_ok_at": "2026-11-07T21:29:29.046Z",
-    "mirrors": {
-      "http": {
-        "status": "http_only",
-        "cors": "any",
-        "http_code": 200,
-        "content_type": "audio/mpeg",
-        "latency_ms": 252,
-        "checked_at": "2026-11-07T21:29:29.046Z",
-        "consecutive_failures": 0,
-        "last_ok_at": "2026-11-07T21:29:29.046Z"
-      }
-    }
-  },
   "97": {
     "status": "ok",
     "cors": "any",
