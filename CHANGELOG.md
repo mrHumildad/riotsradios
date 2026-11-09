@@ -1,5 +1,11 @@
 # riotsradios
 
+## 1.3.0
+
+### Minor Changes
+
+- Station rows keep four fixed lines: long names, programme titles, the stream's own now-playing title and catalogue meta scroll like a broadcast caption instead of wrapping or being cut off. The row headline cycles name → on-air programme → now playing, so the track no longer needs a line of its own.
+
 ## 1.2.0
 
 ### Minor Changes
