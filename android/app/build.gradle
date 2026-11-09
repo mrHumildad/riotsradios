@@ -17,7 +17,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // versionCode is bumped by scripts/release-android.mjs; never reuse a number.
-        versionCode 1
+        versionCode 2
         // package.json is the single source of versionName (see the play-release
         // skill); the Gradle file never holds its own copy.
         versionName new groovy.json.JsonSlurper().parseText(file('../../package.json').text).version
