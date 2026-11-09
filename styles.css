@@ -69,7 +69,10 @@
   --green-active: #00ff64;
   --green-dim:    #0d3d1d;
   --off-white:    #e8e4db;
-  --warm-gray:    #7a7468;
+  /* Secondary text, lifted off the old #7a7468 (4.1:1 on panel-dark), and a
+     small-amber text tone, because --amber-dim is a border colour at 2.7:1. */
+  --warm-gray:    #9a9284;
+  --amber-label:  #c08a1a;
   --chassis-dark: #0a0a0a;
   --panel-dark:   #111110;
   --panel-mid:    #1b1b17;
@@ -85,7 +88,11 @@
 }
 
 html {
-  font-size: 16px;
+  /* 100% rather than a fixed 16px: a hard root size ignores the reader's own
+     browser/OS font preference and makes every rem below it inert. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -97,6 +104,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overscroll-behavior: none;
   /* industrial texture */
   background-image:
     repeating-linear-gradient(
@@ -124,17 +132,26 @@ body::after {
 
 /* ---------- Root Layout ---------- */
 #root {
-  max-width: 520px;
+  max-width: 32.5rem;
   margin: 0 auto;
   padding: 0;
   width: 100%;
 }
 
+/* The chassis fills the viewport exactly once. The children used to carry
+   fixed d(vh) heights that summed to 100dvh *plus* this padding, so the last
+   panel (the footer) was clipped by overflow:hidden on every screen. Header,
+   player and footer now take the height they need and the channel list takes
+   whatever is left, so nothing is cut at any viewport size. */
 .container {
   height: 100dvh;
-  padding: 10px 6px 30px;
+  padding: max(0.6rem, env(safe-area-inset-top))
+           max(0.45rem, env(safe-area-inset-right))
+           max(0.6rem, env(safe-area-inset-bottom))
+           max(0.45rem, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
   width: 100%;
 }
@@ -144,8 +161,8 @@ body::after {
    ========================================================= */
 
 .chassis-header {
-  height: 10dvh;
-  flex: 0 0 10dvh;
+  height: clamp(3.4rem, 10dvh, 5rem);
+  flex: 0 0 auto;
   background: linear-gradient(
     170deg,
     #161411 0%,
@@ -154,8 +171,8 @@ body::after {
   );
   width: 100%;
   border: 1px solid var(--border-warm);
-  border-top: 4px solid var(--amber-dim);
-  padding: 0 12px;
+  border-top: 0.25rem solid var(--amber-dim);
+  padding: 0 clamp(0.5rem, 3vw, 0.9rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -197,8 +214,8 @@ body::after {
 
 .header-logo {
    display: block;
-   width: clamp(28px, 5dvh, 44px);
-   height: clamp(28px, 5dvh, 44px);
+   width: clamp(1.8rem, 5dvh, 2.75rem);
+   height: clamp(1.8rem, 5dvh, 2.75rem);
    border-radius: 8px;
    object-fit: contain;
    transition: transform .35s cubic-bezier(.25,.1,.25,1),
@@ -241,7 +258,7 @@ body::after {
   align-items: center;
   gap: 1px;
   font-family: var(--font-display);
-  font-size: clamp(22px, 4.2dvh, 38px);
+  font-size: clamp(1.35rem, 4.2dvh, 2.35rem);
   font-weight: 400;
   line-height: 1;
   letter-spacing: -.02em;
@@ -251,7 +268,7 @@ body::after {
   z-index: 1;
   flex: 1 1 auto;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 clamp(0.3rem, 2vw, 0.5rem);
 }
 
 /* warm neon glow */
@@ -482,16 +499,16 @@ body::after {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  width: clamp(32px, 5dvh, 46px);
-  height: clamp(32px, 5dvh, 46px);
+  gap: 0.3rem;
+  width: clamp(2.25rem, 5.2dvh, 2.9rem);
+  height: clamp(2.25rem, 5.2dvh, 2.9rem);
   border: 1px solid var(--border-warm);
   border-radius: 8px;
   background: var(--panel-dark);
   cursor: pointer;
   transition: background .2s, border-color .2s;
   flex: 0 0 auto;
-  padding: 8px;
+  padding: 0.45rem;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
 }
 
@@ -538,8 +555,9 @@ body::after {
    ========================================================= */
 
 .player-dashboard {
-  height: 35dvh;
-  flex: 0 0 35dvh;
+  height: clamp(13rem, 34dvh, 21rem);
+  flex: 0 0 auto;
+  min-height: 0;
   overflow: hidden;
   background: linear-gradient(
     175deg,
@@ -548,14 +566,14 @@ body::after {
     #0c0b09 100%
   );
   border: 1px solid var(--border-warm);
-  padding: 16px 14px;
+  padding: clamp(0.55rem, 1.8dvh, 1rem) clamp(0.55rem, 3.4vw, 0.95rem);
   box-shadow:
     0 10px 36px rgba(0,0,0,.9),
     inset 0 1px 0 rgba(255,255,255,.03),
     inset 0 -1px 0 rgba(0,0,0,.6);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: clamp(0.15rem, 0.7dvh, 0.35rem);
   position: relative;
 }
 
@@ -563,14 +581,14 @@ body::after {
 
 /* ---------- CRT AMBER DISPLAY ---------- */
 .crt-display {
-  flex: 0 0 15%;
+  flex: 0 0 auto;
+  min-height: 2.6rem;
   background: var(--vu-bg);
   border: 2px solid #3a2000;
   border-radius: 4px;
-  padding: 0 14px;
+  padding: 0 clamp(0.5rem, 3vw, 0.9rem);
   display: flex;
   align-items: center;
-  height: 100%;
   position: relative;
   overflow: hidden;
   box-shadow:
@@ -608,7 +626,7 @@ body::after {
 #current-station,
 .display-text {
   font-family: var(--font-stencil);
-  font-size: 0.82rem;
+  font-size: clamp(0.82rem, 2.2dvh, 1rem);
   font-weight: 400;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -620,9 +638,32 @@ body::after {
   text-align: center;
   position: relative;
   z-index: 5;
-  line-height: 1.6;
+  line-height: 1.35;
   animation: phosphor-flicker 7s 1s infinite;
 }
+
+/* Stream title under the display (PlayerDashboard.jsx). It had no rule at all,
+   so it rendered as an unthemed 16px block that ate the panel's height. */
+.crt-track {
+  flex: 0 0 auto;
+  font-family: var(--font-stencil);
+  font-size: clamp(0.58rem, 1.5dvh, 0.72rem);
+  letter-spacing: .04em;
+  color: var(--warm-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 0.2rem;
+}
+
+/* The station display scrolls a name wider than the glass instead of cutting it
+   with an ellipsis. Centred while it fits, left-aligned once it moves. */
+.crt-display > .mq {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#current-station.is-scrolling { text-align: left; }
 
 /* Mixed content error state */
 .display-text.stream-error {
@@ -661,15 +702,16 @@ body::after {
   background: var(--vu-bg);
   border: 1px solid #2a1a00;
   border-radius: 4px;
-  padding: 8px 8px 6px;
-  flex: 0 0 70%;
+  padding: clamp(0.3rem, 1dvh, 0.5rem) clamp(0.3rem, 1.2vw, 0.5rem);
+  flex: 1 1 62%;
+  min-height: 0;
   box-shadow:
     inset 0 2px 10px rgba(0,0,0,.95),
     inset 0 0 30px rgba(232,160,0,.02),
     0 0 4px var(--amber-dim);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0.2rem;
   position: relative;
   overflow: hidden;
 }
@@ -712,17 +754,17 @@ body::after {
   align-items: center;
   position: relative;
   z-index: 5;
-  padding: 0 2px;
+  padding: 0 0.15rem;
 }
 
 .soundbar-label-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.35rem;
 }
 
 .soundbar-label {
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   letter-spacing: .35em;
   text-transform: uppercase;
   color: var(--warm-gray);
@@ -731,10 +773,10 @@ body::after {
 
 /* Honesty marker: these bars are synthetic until the real analyzer lands. */
 .sim-badge {
-  font-size: 0.4rem;
+  font-size: 0.5rem;
   letter-spacing: .18em;
   font-weight: 700;
-  padding: 0 4px;
+  padding: 0 0.25rem;
   border: 1px solid var(--amber-dim);
   border-radius: 2px;
   background: #1a1a14;
@@ -743,11 +785,11 @@ body::after {
 }
 
 .soundbar-mode {
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   letter-spacing: .3em;
   text-transform: uppercase;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 0.05rem 0.4rem;
   border-radius: 2px;
   background: #1a1a14;
   border: 1px solid var(--border-warm);
@@ -779,9 +821,9 @@ body::after {
 }
 
 .soundbar-vol {
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   letter-spacing: .2em;
-  color: var(--amber-dim);
+  color: var(--amber-label);
   font-weight: 400;
 }
 
@@ -790,13 +832,13 @@ body::after {
   justify-content: space-between;
   position: relative;
   z-index: 5;
-  padding: 0 2px;
+  padding: 0 0.15rem;
 }
 
 .scale-tick {
-  font-size: 0.4rem;
+  font-size: 0.5rem;
   letter-spacing: .1em;
-  color: #3a2200;
+  color: #8a6420;
   font-weight: 400;
 }
 
@@ -812,10 +854,12 @@ body::after {
   align-items: flex-end;
   justify-content: space-between;
   gap: 2px;
-  height: clamp(18px, calc(50vh - 15dvh), 120px);
+  flex: 1 1 auto;
+  min-height: clamp(1.1rem, 5dvh, 3.5rem);
+  height: auto;
   position: relative;
   z-index: 5;
-  padding: 4px 0;
+  padding: 0.25rem 0;
   background:
     repeating-linear-gradient(
       to bottom,
@@ -892,37 +936,36 @@ body::after {
   justify-content: space-between;
   position: relative;
   z-index: 5;
-  padding: 0 2px;
+  padding: 0 0.15rem;
 }
 
 .freq-band {
-  font-size: 0.4rem;
+  font-size: 0.5rem;
   letter-spacing: .1em;
-  color: #3a2200;
+  color: #8a6420;
   font-weight: 400;
 }
 
 /* ---------- SINGLE CONTROL ROW (play + stop + volume) ---------- */
 .ctrl-row {
-  flex: 0 0 15%;
-  overflow: hidden;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: clamp(0.35rem, 1.8vw, 0.75rem);
   flex-wrap: nowrap;
-  overflow: hidden; /* prevent button row from wrapping on very small screens */
+  min-width: 0;
 }
 
 .ctrl-left {
   
-  min-width: 48px;
+  min-width: 0;
 }
 
 /*** Physical push-button controls — cassette-deck keys ***/
 .push-btn {
   font-family: var(--font-stencil);
-  font-size: 0.7rem;
+  font-size: clamp(0.62rem, 1.6dvh, 0.78rem);
   font-weight: 700;
   letter-spacing: .18em;
   text-transform: uppercase;
@@ -940,9 +983,9 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: clamp(38px, 12dvh, 58px);
-  min-height: clamp(38px, 12dvh, 58px);
-  padding: 0 clamp(4px, 1.5vw, 12px);
+  min-width: clamp(2.4rem, 11.5dvh, 3.6rem);
+  min-height: clamp(2.4rem, 11.5dvh, 3.6rem);
+  padding: 0 clamp(0.25rem, 1.5vw, 0.75rem);
 
   /* 3D face plate */
   background: linear-gradient(
@@ -995,14 +1038,14 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 0.35rem;
 }
 
 /* Skip / prev-next buttons — slightly smaller than play, same amber look */
 .push-btn.skip-btn {
-  min-width: clamp(28px, 8dvh, 46px);
-  min-height: clamp(28px, 8dvh, 46px);
-  padding: 0 6px;
+  min-width: clamp(1.85rem, 8.5dvh, 2.9rem);
+  min-height: clamp(1.85rem, 8.5dvh, 2.9rem);
+  padding: 0 0.35rem;
 }
 
 /* Play / Stop button — green when stopped (play), red when playing (stop) */
@@ -1048,15 +1091,16 @@ body::after {
 .vol-rail {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.3rem;
   flex: 0 1 auto;
-  width: 220px;
-  max-width: 30%;
+  width: clamp(6.5rem, 30%, 12rem);
+  max-width: 38%;
   min-width: 0;
+  min-height: 2.75rem;
   background: var(--vu-bg);
   border: 1px solid var(--border-warm);
   border-radius: 4px;
-  padding: 5px 9px;
+  padding: 0 clamp(0.4rem, 1.6vw, 0.65rem);
   box-shadow: inset 0 2px 6px rgba(0,0,0,.75);
 }
 
@@ -1079,7 +1123,7 @@ body::after {
 
 input[type="range"] {
   flex: 1;
-  height: clamp(3px, 0.5dvh, 6px);
+  height: clamp(0.18rem, 0.5dvh, 0.4rem);
   -webkit-appearance: none;
   appearance: none;
   background: var(--vu-bg);
@@ -1092,8 +1136,8 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 26px;
-  height: 26px;
+  width: clamp(1.4rem, 4.2dvh, 1.95rem);
+  height: clamp(1.4rem, 4.2dvh, 1.95rem);
   border-radius: 50%;
   background: radial-gradient(
     circle at 35% 30%,
@@ -1107,8 +1151,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: clamp(16px, 4.5dvh, 28px);
-  height: clamp(16px, 4.5dvh, 28px);
+  width: clamp(1.4rem, 4.5dvh, 1.75rem);
+  height: clamp(1.4rem, 4.5dvh, 1.75rem);
   border-radius: 50%;
   background: radial-gradient(
     circle at 35% 30%,
@@ -1148,20 +1192,18 @@ input[type="range"]::-moz-range-track {
 
 /* header bar above list */
 .station-section-label {
-  flex: 0 0 10%;
-  height: 10%;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.58rem;
-  letter-spacing: .35em;
+  gap: clamp(0.4rem, 2vw, 0.65rem);
+  font-size: clamp(0.6rem, 1.4dvh, 0.68rem);
+  letter-spacing: .3em;
   text-transform: uppercase;
   color: var(--warm-gray);
   text-align: center;
-  padding: 10px 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  white-space: nowrap;
+  padding: 0.5rem 0 0.4rem;
 }
 .station-section-label::before,
 .station-section-label::after {
@@ -1175,21 +1217,23 @@ input[type="range"]::-moz-range-track {
 }
 
 .station-list-wrapper {
-  flex: 0 0 50dvh;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .station-list-inner {
-  flex: 0 0 90%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding-bottom: 4px;
+  gap: 0.2rem;
+  padding-bottom: 0.25rem;
   scrollbar-width: thin;
   scrollbar-color: var(--amber-dim) var(--panel-mid);
 }
@@ -1213,15 +1257,18 @@ input[type="range"]::-moz-range-track {
 
 /**** STATION ITEM — the "rear channel row" ****/
 .station-item {
+  /* overflow:hidden (for the scanline) zeroes the automatic minimum size of a
+     flex item, so rows used to be compressed and clip their third text line. */
+  flex: 0 0 auto;
   background: var(--panel-dark);
   border: 1px solid var(--border-warm);
-  border-left: 4px solid var(--amber-dim);
+  border-left: 0.25rem solid var(--amber-dim);
   display: grid;
-  grid-template-columns: 34px minmax(0,1fr) auto;
+  grid-template-columns: clamp(1.9rem, 6vw, 2.4rem) minmax(0,1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 11px 13px;
-  min-height: 54px;
+  gap: clamp(0.3rem, 1.6vw, 0.6rem);
+  padding: 0.6rem clamp(0.5rem, 2.8vw, 0.9rem);
+  min-height: 3.4rem;
   cursor: pointer;
   position: relative;
   transition: background .12s ease, border-color .12s ease;
@@ -1274,11 +1321,10 @@ input[type="range"]::-moz-range-track {
 /* Stencil channel number */
 .station-num {
   font-family: var(--font-stencil);
-  font-size: 0.60rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: .15em;
-  color: var(--amber-dim);
-  width: 22px;
+  letter-spacing: .12em;
+  color: var(--amber-label);
   transition: color .15s ease;
 }
 
@@ -1289,59 +1335,95 @@ input[type="range"]::-moz-range-track {
 
 /* Station info */
 .station-info {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .station-name-line {
   font-family: var(--font-stencil);
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   color: var(--off-white);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .station-location-line {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--warm-gray);
-  letter-spacing: .08em;
+  letter-spacing: .07em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.5;
-}
-
-/* the stream's own ICY title, only for stations that expose it */
-.station-now-line {
-  font-size: 0.62rem;
-  color: var(--warm-gray);
-  letter-spacing: .05em;
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* catalogue metadata: country code · codec · bitrate · tags */
 .station-meta-line {
-  font-size: 0.6rem;
+  font-size: 0.66rem;
   color: var(--warm-gray);
-  opacity: .72;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.5;
+  line-height: 1.4;
+}
+
+/* ---- Scrolling row fields (comp/MarqueeText.jsx) ----
+   A row is four fixed lines. A field wider than its column scrolls through it
+   like a broadcast caption rather than wrapping or ending in an ellipsis; the
+   track holds the text twice and shifts by one copy, so the loop has no seam. */
+.mq {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mq-track { display: block; }
+
+.mq-part { white-space: nowrap; }
+
+.mq-static .mq-part {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq.is-scrolling .mq-track {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 40px; /* must match GAP in comp/MarqueeText.jsx */
+  animation: mq-slide var(--mq-duration, 12s) linear infinite;
+}
+
+/* only rows on screen get their own compositing layer */
+.mq.is-scrolling:not(.mq-paused) .mq-track { will-change: transform; }
+
+.mq.is-scrolling .mq-part { display: inline-block; }
+
+/* rows out of view keep their position instead of burning frames */
+.mq-paused .mq-track { animation-play-state: paused; }
+
+@keyframes mq-slide {
+  /* park at the start for a beat so the beginning is always readable, then
+     travel; the hold is 12% of the loop — keep in step with HOLD in the
+     component, which stretches the duration so the travel speed is unchanged */
+  0%, 12% { transform: translate3d(0, 0, 0); }
+  100%    { transform: translate3d(calc(-1 * var(--mq-shift, 0px)), 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq.is-scrolling .mq-track { animation: none; }
 }
 
 /* Station body — icon + name+location, stacked, in middle column */
 .station-body {
   display: flex;
-  gap: 8px;
+  gap: clamp(0.3rem, 1.5vw, 0.5rem);
   align-items: center;
   min-width: 0;
 }
@@ -1350,19 +1432,19 @@ input[type="range"]::-moz-range-track {
 .station-aside {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: clamp(0.2rem, 1.2vw, 0.45rem);
   flex-shrink: 0;
 }
 
 /* Health badge (from the last probe snapshot) */
 .health-badge {
   display: inline-block;
-  margin-top: 2px;
-  font-size: 0.42rem;
+  margin-top: 0.15rem;
+  font-size: 0.55rem;
   letter-spacing: .18em;
   text-transform: uppercase;
   font-weight: 700;
-  padding: 0 4px;
+  padding: 0 0.25rem;
   border: 1px solid;
   border-radius: 2px;
 }
@@ -1379,8 +1461,8 @@ input[type="range"]::-moz-range-track {
 
 /* Station icon — restore original style */
 .station-icon {
-  width: clamp(18px, 5dvh, 34px);
-  height: clamp(18px, 5dvh, 34px);
+  width: clamp(1.5rem, 4.6dvh, 2.15rem);
+  height: clamp(1.5rem, 4.6dvh, 2.15rem);
   border-radius: 3px;
   border: 1px solid var(--border-warm);
   flex-shrink: 0;
@@ -1394,7 +1476,7 @@ input[type="range"]::-moz-range-track {
   flex-shrink: 0;
   align-self: center;
   transition: color .2s ease;
-  width: 20px;
+  width: 1.4rem;
   text-align: right;
 }
 
@@ -1474,13 +1556,13 @@ input[type="range"]::-moz-range-track {
 /* homepage link inline */
 .homepage-btn {
   font-family: var(--font-stencil);
-  font-size: 0.57rem;
-  letter-spacing: .1em;
+  font-size: 0.62rem;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--amber-dim);
+  color: var(--amber-label);
   background: transparent;
   border: 1px solid var(--amber-dim);
-  padding: 2px 8px;
+  padding: 0.1rem 0.45rem;
   border-radius: 2px;
   text-decoration: none;
   display: inline-block;
@@ -1499,24 +1581,23 @@ input[type="range"]::-moz-range-track {
    SECTION 4 — FOOTER STATUS
    ========================================================= */
 .chassis-footer {
-  height: 5dvh;
-  flex: 0 0 5dvh;
+  flex: 0 0 auto;
+  min-height: 2.2rem;
   background: var(--panel-dark);
   border: 1px solid var(--border-warm);
   border-top: 3px solid var(--border-warm);
-    border-bottom: 4px solid var(--amber-dim);
-
-  padding: 8px 16px;
+  border-bottom: 0.25rem solid var(--amber-dim);
+  padding: 0.35rem clamp(0.6rem, 3vw, 1rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.65rem;
+  gap: 0.5rem;
+  /* Impact is not on Android; the fallback broke the chassis lettering. */
+  font-family: var(--font-stencil);
+  font-size: clamp(0.55rem, 1.4dvh, 0.68rem);
   letter-spacing: .12em;
   text-transform: uppercase;
-  text-shadow: 0 0 6px var(--amber-glow);
-  font-family: "Impact", "Arial Black", sans-serif;
   color: var(--amber);
-  letter-spacing: .15em;
   text-shadow: 0 0 6px var(--amber-glow);
 }
 
@@ -1530,44 +1611,64 @@ input[type="range"]::-moz-range-track {
 /* EPG badge pill in station-aside */
 .epg-badge {
   font-family: var(--font-stencil);
-  font-size: 0.48rem;
+  font-size: 0.58rem;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--amber);
   background: rgba(232,160,0,.1);
   border: 1px solid var(--amber-dim);
-  padding: 1px 6px;
+  padding: 0.05rem 0.4rem;
   border-radius: 2px;
   flex-shrink: 0;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 /* Station name / show name alternation container */
 .station-name-container {
-  min-height: 1.45em;
+  min-height: 1.35em;
   overflow: hidden;
   position: relative;
 }
 
 .station-name-container .station-name-line,
 .station-name-container .station-show-text {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
   line-height: 1.45;
 }
 
-/* Show title text that alternates with station name */
+/* Show title that alternates with station name: the live dot holds its place and
+   only the title scrolls when it is wider than the name column. */
 .station-show-text {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  overflow: hidden;
   font-family: var(--font-stencil);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: .04em;
   color: var(--amber);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.station-show-text .epg-live-dot {
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+.station-show-mq {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* now-playing variant of the row headline — secondary to the name and the story */
+.station-show-text.is-track { color: var(--warm-gray); }
+
+.station-show-text .station-track-mark {
+  flex-shrink: 0;
+  color: var(--amber-dim);
+  font-size: 0.95em;
+  letter-spacing: 0;
 }
 
 .station-show-text.is-live {
@@ -1578,8 +1679,8 @@ input[type="range"]::-moz-range-track {
 /* Live dot indicator */
 .epg-live-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
   background: var(--red-live);
   box-shadow: 0 0 5px var(--red-live), 0 0 10px rgba(255,46,46,.4);
@@ -1597,8 +1698,8 @@ input[type="range"]::-moz-range-track {
 /* Off-air dot (non-live shows) */
 .epg-off-dot {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 0.3rem;
+  height: 0.3rem;
   border-radius: 50%;
   background: var(--amber-dim);
   flex-shrink: 0;
@@ -1618,14 +1719,14 @@ input[type="range"]::-moz-range-track {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 0.75rem;
 }
 
 .epg-modal {
   background: var(--panel-dark);
   border: 1px solid var(--border-warm);
   width: 100%;
-  max-width: 480px;
+  max-width: 30rem;
   max-height: 80dvh;
   display: flex;
   flex-direction: column;
@@ -1640,7 +1741,7 @@ input[type="range"]::-moz-range-track {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--border-warm);
   flex-shrink: 0;
 }
@@ -1648,13 +1749,13 @@ input[type="range"]::-moz-range-track {
 .epg-modal-station {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   min-width: 0;
 }
 
 .epg-modal-icon {
-  width: 24px;
-  height: 24px;
+  width: 1.6rem;
+  height: 1.6rem;
   border-radius: 3px;
   border: 1px solid var(--border-warm);
   flex-shrink: 0;
@@ -1662,7 +1763,7 @@ input[type="range"]::-moz-range-track {
 
 .epg-modal-name {
   font-family: var(--font-stencil);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: .06em;
   color: var(--off-white);
@@ -1677,8 +1778,8 @@ input[type="range"]::-moz-range-track {
   color: var(--warm-gray);
   background: transparent;
   border: 1px solid var(--border-warm);
-  width: clamp(24px, 7dvh, 34px);
-  height: clamp(24px, 7dvh, 34px);
+  width: clamp(1.75rem, 6dvh, 2.25rem);
+  height: clamp(1.75rem, 6dvh, 2.25rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1696,8 +1797,8 @@ input[type="range"]::-moz-range-track {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 10px 14px;
+  gap: 0.9rem;
+  padding: 0.6rem 0.9rem;
   border-bottom: 1px solid var(--border-warm);
   flex-shrink: 0;
 }
@@ -1708,8 +1809,8 @@ input[type="range"]::-moz-range-track {
   color: var(--amber-dim);
   background: transparent;
   border: 1px solid var(--border-warm);
-  width: clamp(24px, 7dvh, 34px);
-  height: clamp(24px, 7dvh, 34px);
+  width: clamp(1.75rem, 6dvh, 2.25rem);
+  height: clamp(1.75rem, 6dvh, 2.25rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1735,20 +1836,20 @@ input[type="range"]::-moz-range-track {
   letter-spacing: .15em;
   text-transform: uppercase;
   color: var(--amber);
-  min-width: 80px;
+  min-width: 5rem;
   text-align: center;
 }
 
 .epg-today-btn {
   font-family: var(--font-stencil);
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--amber-dim);
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0 14px 6px;
+  padding: 0 0.9rem 0.4rem;
   text-align: center;
   flex-shrink: 0;
   transition: color .12s ease;
@@ -1761,7 +1862,7 @@ input[type="range"]::-moz-range-track {
 .epg-schedule {
   overflow-y: auto;
   flex: 1;
-  padding: 6px 10px 10px;
+  padding: 0.4rem 0.6rem 0.6rem;
   scrollbar-width: thin;
   scrollbar-color: var(--amber-dim) var(--panel-mid);
 }
@@ -1772,10 +1873,10 @@ input[type="range"]::-moz-range-track {
 
 .epg-prog {
   display: grid;
-  grid-template-columns: 56px minmax(0,1fr) auto;
+  grid-template-columns: 3.5rem minmax(0,1fr) auto;
   align-items: start;
-  gap: 10px;
-  padding: 8px 6px;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem;
   border-bottom: 1px solid rgba(58,58,46,.3);
   transition: background .12s ease;
 }
@@ -1804,7 +1905,7 @@ input[type="range"]::-moz-range-track {
 
 .epg-start {
   font-family: var(--font-stencil);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--off-white);
   letter-spacing: .04em;
@@ -1812,7 +1913,7 @@ input[type="range"]::-moz-range-track {
 
 .epg-duration {
   font-family: var(--font-stencil);
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   color: var(--warm-gray);
   letter-spacing: .05em;
 }
@@ -1824,13 +1925,13 @@ input[type="range"]::-moz-range-track {
 .epg-prog-title-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.4rem;
   flex-wrap: nowrap;
 }
 
 .epg-prog-live {
   font-family: var(--font-stencil);
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: .15em;
   color: var(--red-live);
@@ -1843,9 +1944,12 @@ input[type="range"]::-moz-range-track {
   50%      { opacity: .5; }
 }
 
+/* Programme titles scroll through the row when they outrun it (comp/MarqueeText.jsx) */
 .epg-prog-title {
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-stencil);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--off-white);
   white-space: nowrap;
@@ -1860,7 +1964,7 @@ input[type="range"]::-moz-range-track {
 
 .epg-prog-cat {
   font-family: var(--font-stencil);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   color: var(--warm-gray);
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -1869,7 +1973,7 @@ input[type="range"]::-moz-range-track {
 
 .epg-prog-note {
   font-family: var(--font-stencil);
-  font-size: 0.5rem;
+  font-size: 0.58rem;
   color: var(--amber);
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -1891,10 +1995,10 @@ input[type="range"]::-moz-range-track {
 
 .epg-no-data {
   font-family: var(--font-stencil);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--warm-gray);
   text-align: center;
-  padding: 30px 10px;
+  padding: 1.9rem 0.6rem;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
@@ -1902,16 +2006,16 @@ input[type="range"]::-moz-range-track {
 /* Make EPG badge in station list a button */
 .epg-badge-btn {
   font-family: var(--font-stencil);
-  font-size: 0.48rem;
+  font-size: 0.58rem;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--amber);
   background: rgba(232,160,0,.1);
   border: 1px solid var(--amber-dim);
-  padding: 1px 6px;
+  padding: 0.05rem 0.4rem;
   border-radius: 2px;
   flex-shrink: 0;
-  line-height: 1.6;
+  line-height: 1.4;
   cursor: pointer;
   transition: color .12s ease, border-color .12s ease, background .12s ease;
 }
@@ -1937,13 +2041,23 @@ input[type="range"]::-moz-range-track {
    ========================================================= */
 
 @media (min-width: 390px) {
-  .container { padding: 0 10px 40px; }
-  .player-dashboard { padding: 18px 16px; }
-  .station-name-line { font-size: 0.83rem; }
+  .container {
+    padding: max(0.65rem, env(safe-area-inset-top))
+             max(0.7rem, env(safe-area-inset-right))
+             max(0.65rem, env(safe-area-inset-bottom))
+             max(0.7rem, env(safe-area-inset-left));
+  }
+  .player-dashboard { padding: 0.7rem 0.8rem; }
+  .station-name-line { font-size: 0.88rem; }
 }
 
 @media (min-width: 480px) {
-  .container { padding: 0 18px 48px; }
+  .container {
+    padding: max(0.7rem, env(safe-area-inset-top))
+             max(1.05rem, env(safe-area-inset-right))
+             max(0.7rem, env(safe-area-inset-bottom))
+             max(1.05rem, env(safe-area-inset-left));
+  }
 
   .vu-col { min-width: 16px; }
 
@@ -1953,12 +2067,12 @@ input[type="range"]::-moz-range-track {
     letter-spacing: .18em;
   }
 
-  .station-item { padding: 11px 14px; }
-  .station-icon { width: 34px; height: 34px; }
+  .station-item { padding: 0.65rem 0.85rem; }
+  .station-icon { width: 2.15rem; height: 2.15rem; }
 }
 
 @media (min-width: 768px) {
-  #root { max-width: 600px; }
+  #root { max-width: 37.5rem; }
 
   .player-dashboard {
     border-radius: 0;
@@ -1968,23 +2082,23 @@ input[type="range"]::-moz-range-track {
 
   .vu-col { min-width: 20px; }
 
-  .station-item { padding: 12px 16px; }
+  .station-item { padding: 0.7rem 1rem; }
 
   .footer-sig { font-size: 0.62rem; }
 }
 
 /* Height-cap breakpoints — prevent overflow on short mobile viewports */
 @media (max-height: 520px) {
-  .chassis-header .header-model { font-size: 0.48rem; letter-spacing: 0.15em; }
-  .chassis-footer               { font-size: 0.42rem; padding: 4px 12px; }
-  .ctrl-row                     { gap: 6px; }
-  .push-btn                     { min-width: clamp(28px, 10dvh, 38px); min-height: clamp(28px, 10dvh, 38px); }
+  .player-dashboard             { height: clamp(8.5rem, 40dvh, 14rem); }
+  .chassis-footer               { font-size: 0.6rem; padding: 0.25rem 0.75rem; }
+  .ctrl-row                     { gap: 0.35rem; }
+  .push-btn                     { min-width: clamp(1.75rem, 10dvh, 2.4rem); min-height: clamp(1.75rem, 10dvh, 2.4rem); }
 }
 
 @media (max-height: 400px) {
-  .crt-display       { padding: 6px 8px; }
-  .soundbar-bars     { height: clamp(12px, 6dvh, 40px); }
-  .push-btn.skip-btn { min-width: clamp(22px, 8dvh, 32px); min-height: clamp(22px, 8dvh, 32px); }
+  .crt-display       { padding: 0 0.5rem; }
+  .soundbar-bars     { height: clamp(0.75rem, 6dvh, 2.5rem); }
+  .push-btn.skip-btn { min-width: clamp(1.4rem, 8dvh, 2rem); min-height: clamp(1.4rem, 8dvh, 2rem); }
 }
 
 @media (min-width: 900px) {
@@ -2026,7 +2140,7 @@ input[type="range"]::-moz-range-track {
 
 .splash-logo {
   display: block;
-  width: min(72vw, 300px);
+  width: min(72vw, 19rem);
   height: auto;
   /* the artwork is on black, matching the splash backdrop */
   animation: splash-flicker .45s steps(2, end) 2;
@@ -2038,7 +2152,7 @@ input[type="range"]::-moz-range-track {
 }
 
 @media (min-width: 1200px) {
-  .splash-logo { width: min(38vw, 460px); }
+  .splash-logo { width: min(38vw, 28.75rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2075,6 +2189,20 @@ input[type="range"]::-moz-range-track {
    .header-brand.reduced-motion .visually-hidden{display:none}
  }
 
+/* Motion the chassis keeps running regardless of the brand animation. */
+@media (prefers-reduced-motion: reduce) {
+  .player-dashboard,
+  .display-text,
+  .station-item::after,
+  .station-item.playing::after,
+  .station-item.playing .play-ind,
+  .epg-live-dot,
+  .epg-prog-live,
+  .soundbar-bars.is-active .bar-seg.seg-hot {
+    animation: none !important;
+  }
+}
+
 /* ---- Keyboard / D-pad focus ---- */
 .station-item:focus-visible {
   outline: 2px solid var(--amber);
@@ -2087,7 +2215,7 @@ input[type="range"]::-moz-range-track {
 .main-columns { display: contents; }
 
 @media (min-width: 1200px) {
-  #root { max-width: 1360px; }
+  #root { max-width: 85rem; }
 
   .container {
     padding-top: max(16px, env(safe-area-inset-top));
@@ -2098,50 +2226,47 @@ input[type="range"]::-moz-range-track {
 
   .main-columns {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
-    gap: clamp(20px, 2vw, 44px);
+    grid-template-columns: minmax(0, 1.2fr) minmax(24rem, 0.8fr);
+    gap: clamp(1.25rem, 2vw, 2.75rem);
     flex: 1 1 auto;
     min-height: 0;
     align-items: stretch;
   }
 
   .main-columns > * { min-width: 0; }
-  .main-columns > .player-dashboard { min-height: 0; }
+  .main-columns > .player-dashboard { min-height: 0; height: auto; }
 
   .station-list-wrapper { flex: 1 1 auto; min-height: 0; }
   .station-list-inner { flex: 1 1 auto; }
 
-  .station-item { min-height: 62px; }
+  .station-item { min-height: 3.9rem; }
   .station-name-line { font-size: 1.02rem; }
-  .station-location-line { font-size: 0.78rem; }
-  .station-meta-line { font-size: 0.7rem; }
-  .station-now-line { font-size: 0.74rem; }
-  .soundbar-bars { height: clamp(70px, 16vh, 170px); }
-  .crt-display { font-size: clamp(1.1rem, 1.5vw, 1.7rem); }
+  .station-location-line { font-size: 0.82rem; }
+  .station-meta-line { font-size: 0.78rem; }
+  .soundbar-bars { height: clamp(4.5rem, 16vh, 10.5rem); }
+  #current-station { font-size: clamp(1.1rem, 1.5vw, 1.7rem); }
   .station-item:focus-visible { outline-width: 3px; outline-offset: 3px; }
 }
 
 @media (min-width: 1920px) {
-  #root { max-width: 1680px; }
+  #root { max-width: 105rem; }
   .main-columns {
-    grid-template-columns: minmax(0, 1.3fr) minmax(470px, 0.7fr);
-    gap: 48px;
+    grid-template-columns: minmax(0, 1.3fr) minmax(29rem, 0.7fr);
+    gap: 3rem;
   }
-  .station-item { min-height: 74px; }
+  .station-item { min-height: 4.6rem; }
   .station-name-line { font-size: 1.18rem; }
   .station-location-line { font-size: 0.9rem; }
   .station-meta-line { font-size: 0.8rem; }
-  .station-now-line { font-size: 0.84rem; }
-  .soundbar-bars { height: clamp(90px, 18vh, 220px); }
+  .soundbar-bars { height: clamp(5.5rem, 18vh, 13.5rem); }
 }
 
 @media (min-width: 2560px) {
-  #root { max-width: 2100px; }
-  .station-item { min-height: 88px; }
+  #root { max-width: 131rem; }
+  .station-item { min-height: 5.5rem; }
   .station-name-line { font-size: 1.35rem; }
   .station-location-line { font-size: 1rem; }
   .station-meta-line { font-size: 0.88rem; }
-  .station-now-line { font-size: 0.92rem; }
 }
 
 /* =========================================================

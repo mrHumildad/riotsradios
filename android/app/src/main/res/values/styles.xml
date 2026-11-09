@@ -13,6 +13,14 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- The chassis is always dark, whatever the system theme: the strip
+             behind the visible status bar is the same black, with light icons,
+             so the system bar reads as part of the app instead of a light
+             DayNight band above it. -->
+        <item name="android:windowBackground">#0a0a0a</item>
+        <item name="android:statusBarColor">#0a0a0a</item>
+        <item name="android:navigationBarColor">#0a0a0a</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import MarqueeText from './MarqueeText'
 
 function EPGModal({ station, epg, getDaySchedule, onClose }) {
   const [dayOffset, setDayOffset] = useState(0)
@@ -77,7 +78,7 @@ function EPGModal({ station, epg, getDaySchedule, onClose }) {
 <div className="epg-prog-body">
                    <div className="epg-prog-title-row">
                      {prog.live && <span className="epg-prog-live">● LIVE</span>}
-                     <span className="epg-prog-title">{prog.title}</span>
+                     <MarqueeText className="epg-prog-title" text={prog.title} />
                    </div>
                    <div className="epg-prog-cat">{categories[prog.category] || prog.category}</div>
                    {prog.recurrence_note && <div className="epg-prog-note">{prog.recurrence_note}</div>}

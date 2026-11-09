@@ -5,5 +5,10 @@
   "backgroundColor": "#000000",
   "server": {
     "androidScheme": "http"
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK"
+    }
   }
 }

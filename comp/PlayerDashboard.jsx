@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useSpectrum } from './useSpectrum.js'
+import MarqueeText from './MarqueeText'
 
 /* ─────────────────────────────────────────────────
    PlayerDashboard
@@ -60,11 +61,15 @@ function PlayerDashboard({
 
 
       <div className="crt-display" aria-label="Current station">
-        <span id="current-station" className={displayClass}>{crtText}</span>
+        <MarqueeText id="current-station" className={displayClass} text={crtText} />
       </div>
 
       {currentTrack && !hasError && (
-        <div className="crt-track" title={`Now playing: ${currentTrack}`}>♪ {currentTrack}</div>
+        <MarqueeText
+          className="crt-track"
+          text={`♪ ${currentTrack}`}
+          title={`Now playing: ${currentTrack}`}
+        />
       )}
 
 

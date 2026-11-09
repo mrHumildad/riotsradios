@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { healthBadge } from '../lib/health.js'
 import { stationPlace } from '../lib/stations.js'
+import MarqueeText from './MarqueeText'
 
 /* The API metadata a listener can use, on one muted line: country code, codec,
    bitrate and the station's own tags. Every part is optional — a row with bare
@@ -17,7 +18,7 @@ function stationMeta(station) {
 }
 
 function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, nowTitle, hasEpg, onOpenEpg, onEditStation }) {
-  const [showEpgName, setShowEpgName] = useState(false)
+  const [cycleStep, setCycleStep] = useState(0)
   /* The icon is a remote image. A dead URL hides it, and editing the URL must be
      able to bring it back — so the failure is component state that resets when
      the URL changes, never a style set on the DOM node by the error handler. */
@@ -30,15 +31,24 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
     setIconFailed(false)
   }, [station.favicon])
 
+  /* One headline per row: the station name, the programme on air, then the
+     stream's own ICY title, cycling in place. Showing what is playing costs no
+     extra line this way — hence no separate now-playing row. */
+  const headline = ['name']
+  if (currentShow) headline.push('show')
+  if (nowTitle) headline.push('track')
+  /* restart only when a headline appears or disappears, not when a title
+     changes — an ICY update must not cut the cycle short */
+  const headlineKey = `${currentShow ? 'show' : ''}|${nowTitle ? 'track' : ''}`
+
   useEffect(() => {
-    if (!currentShow) {
-      setShowEpgName(false)
-      return
-    }
-    setShowEpgName(true)
-    const id = setInterval(() => setShowEpgName(v => !v), 3500)
+    setCycleStep(0)
+    if (headline.length < 2) return undefined
+    const id = setInterval(() => setCycleStep(step => step + 1), 3500)
     return () => clearInterval(id)
-  }, [currentShow])
+  }, [headlineKey])
+
+  const headlineKind = headline[cycleStep % headline.length]
 
   const liveIndicator = currentShow?.live
     ? <span className="epg-live-dot" />
@@ -78,21 +88,26 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
         )}
         <div className="station-info">
           <div className="station-name-container">
-            {currentShow && showEpgName ? (
+            {headlineKind === 'show' ? (
               <span className={`station-show-text${currentShow.live ? ' is-live' : ''}`}>
-                {liveIndicator} {currentShow.title}
+                {liveIndicator}
+                <MarqueeText className="station-show-mq" text={currentShow.title} />
+              </span>
+            ) : headlineKind === 'track' ? (
+              <span className="station-show-text is-track">
+                <span className="station-track-mark" aria-hidden="true">♪</span>
+                <MarqueeText
+                  className="station-show-mq"
+                  text={nowTitle}
+                  title={`Now playing: ${nowTitle}`}
+                />
               </span>
             ) : (
-              <span className="station-name-line">{station.name || '(unlisted)'}</span>
+              <MarqueeText className="station-name-line" text={station.name || '(unlisted)'} />
             )}
           </div>
-          {nowTitle && (
-            <div className="station-now-line" title={`Now playing: ${nowTitle}`}>
-              ♪ {nowTitle}
-            </div>
-          )}
-          {place && <div className="station-location-line">{place}</div>}
-          {meta && <div className="station-meta-line" title={meta}>{meta}</div>}
+          {place && <MarqueeText className="station-location-line" text={place} />}
+          {meta && <MarqueeText className="station-meta-line" text={meta} title={meta} />}
           {badge && badge.tone !== 'ok' && (
             <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
           )}
