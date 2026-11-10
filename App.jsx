@@ -4,8 +4,10 @@ import { stations, refreshStations } from './stations.js'
 import logoPng from '/logob_transp_ffc107.png'
 import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
-import EPGModal from './comp/EPGModal.jsx'
+import StationModal from './comp/StationModal.jsx'
 import StationEditModal from './comp/StationEditModal.jsx'
+import { useFavorites } from './comp/useFavorites.js'
+import { stationTimeZone } from './lib/stationTime.js'
 import { isFreshTitle } from './lib/icy.js'
 import { version } from './package.json'
 function App() {
@@ -28,7 +30,8 @@ const {
     nextStation,
     prevStation
   } = useRadioLogic();
-  const [epgModalStation, setEpgModalStation] = useState(null)
+  const { ids: favoriteIds, isFavorite, toggleFavorite } = useFavorites()
+  const [stationModalStation, setStationModalStation] = useState(null)
   const [brandState, setBrandState] = useState('riots')
   const [brandWord, setBrandWord] = useState('RIOTS')
   const [isMorphing, setIsMorphing] = useState(false)
@@ -36,6 +39,11 @@ const {
   
   const currentStationObject = currentStationIndex !== null ? stations[currentStationIndex] : null
   const currentShow = currentStationObject ? currentShows.get(currentStationObject.id) || null : null
+  /* The guide owns the station's zone; a station without one falls back to the
+     zone of the place it broadcasts from. */
+  const currentTimeZone = currentStationObject
+    ? stationTimeZone(currentStationObject, epgData.get(currentStationObject.id))
+    : null
 
   /* Stream titles go stale: a station whose reader stopped answering is shown
      without a track rather than with the last one it ever played. */
@@ -54,7 +62,7 @@ const {
       ? stations[currentStationIndex]?.name || 'Unknown'
       : `${stations[currentStationIndex]?.name || 'Unknown'}`;
 
-  const modalEpg = epgModalStation ? epgData.get(epgModalStation.id) : null
+  const modalEpg = stationModalStation ? epgData.get(stationModalStation.id) : null
 
   /* Development-only catalog editor. The station is looked up by its CSV line
      so the modal keeps following the row after the list is refreshed. */
@@ -107,14 +115,14 @@ const {
     const isDown  = e => ['ArrowDown','Down'].includes(e.key) || e.keyCode === 40;
     const isEnter = e => ['Enter','NumpadEnter'].includes(e.key) || e.keyCode === 13;
     const isEsc   = e => ['Escape','Esc','Backspace'].includes(e.key) || [27,8].includes(e.keyCode);
-    const isEPG   = e => (e.key && e.key.toLowerCase()==='e') || e.keyCode===69 || e.key==='ContextMenu' || e.keyCode===93 || (e.key && e.key.toLowerCase()==='i') || e.keyCode===73 || e.key==='Menu';
+    const isInfo  = e => (e.key && e.key.toLowerCase()==='e') || e.keyCode===69 || e.key==='ContextMenu' || e.keyCode===93 || (e.key && e.key.toLowerCase()==='i') || e.keyCode===73 || e.key==='Menu';
     const isMediaPP = e => e.code === 'MediaPlayPause' || e.keyCode === 179;
     const isMediaStop = e => e.code === 'MediaStop' || e.keyCode === 178;
 
     const h = (e) => {
       if (e.isComposing) return;
-      if (epgModalStation) {
-        if (isEsc(e)) { setEpgModalStation(null); e.preventDefault(); }
+      if (stationModalStation) {
+        if (isEsc(e)) { setStationModalStation(null); e.preventDefault(); }
         return;
       }
       /* The station editor owns the keyboard while it is open; playback
@@ -129,13 +137,13 @@ const {
       if (isDown(e)) { changeVolume(Math.max(0, volume-0.05)); e.preventDefault(); return; }
       if (isEnter(e) || isMediaPP(e)) { togglePlay(); e.preventDefault(); return; }
       if (isMediaStop(e) && isPlaying) { togglePlay(); e.preventDefault(); return; }
-      if (isEPG(e) && currentStationObject && epgData.has(currentStationObject.id)) {
-        setEpgModalStation(currentStationObject); e.preventDefault();
+      if (isInfo(e) && currentStationObject) {
+        setStationModalStation(currentStationObject); e.preventDefault();
       }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [epgModalStation, editStation, isCreating, currentStationObject, epgData, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying, setEpgModalStation]);
+  }, [stationModalStation, editStation, isCreating, currentStationObject, prevStation, nextStation, volume, changeVolume, togglePlay, isPlaying]);
 
   useEffect(() => {
     const m = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -242,6 +250,9 @@ const {
          currentStationName={currentStationName}
          currentStationIndex={currentStationIndex}
          playbackState={playbackState}
+         codec={currentStationObject?.codec}
+         bitrate={currentStationObject?.bitrate}
+         timeZone={currentTimeZone}
          volume={volume}
          currentShow={currentShow}
          currentTrack={currentTrack}
@@ -257,11 +268,12 @@ const {
         stations={stations}
         currentStationIndex={currentStationIndex}
         isPlaying={isPlaying}
+        playbackState={playbackState}
+        favoriteIds={favoriteIds}
         onSelectStation={selectStation}
-        epgData={epgData}
         currentShows={currentShows}
         trackTitles={trackTitles}
-        onOpenEpg={setEpgModalStation}
+        onOpenStation={setStationModalStation}
         onEditStation={openEditor}
         onAddStation={openCreator}
       />
@@ -273,12 +285,14 @@ const {
         <span>mrhumildad</span>
       </div>
 
-      {epgModalStation && (
-        <EPGModal
-          station={epgModalStation}
+      {stationModalStation && (
+        <StationModal
+          station={stationModalStation}
           epg={modalEpg}
           getDaySchedule={getDaySchedule}
-          onClose={() => setEpgModalStation(null)}
+          isFavorite={isFavorite(stationModalStation.id)}
+          onToggleFavorite={() => toggleFavorite(stationModalStation.id)}
+          onClose={() => setStationModalStation(null)}
         />
       )}
 

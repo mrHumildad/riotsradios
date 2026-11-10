@@ -2,22 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { healthBadge } from '../lib/health.js'
 import { stationPlace } from '../lib/stations.js'
 import MarqueeText from './MarqueeText'
+/* Brand mark shown when a station has no artwork or its icon URL is dead. */
+import fallbackIcon from '/logob_transp_ffc107.png'
 
-/* The API metadata a listener can use, on one muted line: country code, codec,
-   bitrate and the station's own tags. Every part is optional — a row with bare
-   metadata just shows fewer parts, and a row with none shows no line at all. */
-function stationMeta(station) {
-  const codec = String(station.codec || '').trim()
-  const kbps = String(station.bitrate || '').trim()
-  /* radio-browser stores tags comma-separated without spaces. */
-  const tags = String(station.tags || '').replace(/\s*,\s*/g, ', ').trim()
-  return [station.countrycode, codec, kbps && `${kbps} kbps`, tags]
-    .map((part) => String(part || '').trim())
-    .filter(Boolean)
-    .join(' · ')
-}
-
-function StationItem({ station, index, isActive, isSelected, onSelect, currentShow, nowTitle, hasEpg, onOpenEpg, onEditStation }) {
+function StationItem({ station, index, isActive, isSelected, playState, isFavorite, onSelect, currentShow, nowTitle, onOpenStation, onEditStation }) {
   const [cycleStep, setCycleStep] = useState(0)
   /* The icon is a remote image. A dead URL hides it, and editing the URL must be
      able to bring it back — so the failure is component state that resets when
@@ -25,7 +13,17 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
   const [iconFailed, setIconFailed] = useState(false)
   const badge = healthBadge(station.health)
   const place = stationPlace(station)
-  const meta = stationMeta(station)
+  /* Second line: the catalog's free-text place (city, province for most rows)
+     with the country code in brackets after it. */
+  const countryCode = String(station.countrycode || '').trim()
+  const placeLine = place && countryCode ? `${place} (${countryCode})` : place
+  /* The row the player owns also reports what the stream is doing: stopped is
+     left to the plain red selected style, error and loading get their own
+     blinking marker. A stalled stream is a failure, so it blinks like an
+     error. */
+  const playStateClass = isSelected && playState && playState !== 'playing'
+    ? ` is-${playState === 'stalled' ? 'error' : playState}`
+    : ''
 
   useEffect(() => {
     setIconFailed(false)
@@ -60,7 +58,7 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
       role="button"
       tabIndex={0}
       aria-label={`${station.name || '(unlisted)'}${isActive ? ', playing' : ''}`}
-      className={`station-item${isActive ? ' playing' : ''}${isSelected && !isActive ? ' selected' : ''}`}
+      className={`station-item${isActive ? ' playing' : ''}${isSelected && !isActive ? ' selected' : ''}${playStateClass}`}
       onClick={() => onSelect(index)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -69,21 +67,41 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
         }
       }}
     >
-      <div className="station-num">{String(index + 1).padStart(2, '0')}</div>
+      <span
+        className={`station-fav${isFavorite ? ' is-fav' : ''}`}
+        title={isFavorite ? 'Favourite station' : 'Not a favourite'}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            className="flame-body"
+            d="M12 2.5c2.9 3.3 5 6.3 5 9.4a5 5 0 0 1-10 0c0-2.2 1-3.9 2.3-5.3.3 1.2.9 2 1.8 2.5.3-2.4.7-4.9.9-6.6Z"
+          />
+        </svg>
+      </span>
 
       <div className="station-body">
-        {station.favicon && !iconFailed && (
+        {station.favicon && !iconFailed ? (
           <img
             key={station.favicon}
             src={station.favicon}
             alt=""
-            width="34"
-            height="34"
+            width="48"
+            height="48"
             loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
             className="station-icon"
             onError={() => setIconFailed(true)}
+          />
+        ) : (
+          <img
+            src={fallbackIcon}
+            alt=""
+            width="48"
+            height="48"
+            decoding="async"
+            className="station-icon is-default"
           />
         )}
         <div className="station-info">
@@ -106,8 +124,7 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
               <MarqueeText className="station-name-line" text={station.name || '(unlisted)'} />
             )}
           </div>
-          {place && <MarqueeText className="station-location-line" text={place} />}
-          {meta && <MarqueeText className="station-meta-line" text={meta} title={meta} />}
+          {placeLine && <MarqueeText className="station-location-line" text={placeLine} />}
           {badge && badge.tone !== 'ok' && (
             <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
           )}
@@ -125,29 +142,18 @@ function StationItem({ station, index, isActive, isSelected, onSelect, currentSh
             EDIT
           </button>
         )}
-        {hasEpg && (
-          <button
-            className="epg-badge-btn"
-            onClick={(e) => { e.stopPropagation(); onOpenEpg(station) }}
-            aria-label={`Open EPG for ${station.name}`}
-          >
-            EPG
-          </button>
-        )}
-        {station.homepage && (
-          <a
-            href={station.homepage}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="homepage-btn"
-            onClick={(e) => e.stopPropagation()}
-          >
-            WEB
-          </a>
-        )}
-        <div className="play-ind" aria-hidden="true">
-          {isActive ? '▶' : isSelected ? '■' : '▷'}
-        </div>
+        <button
+          className="station-info-btn"
+          onClick={(e) => { e.stopPropagation(); onOpenStation(station) }}
+          aria-label={`Station info for ${station.name || 'station'}`}
+          title="Station info"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="9" />
+            <line x1="12" y1="11" x2="12" y2="16.5" />
+            <circle className="info-btn-dot" cx="12" cy="7.4" r="1.15" />
+          </svg>
+        </button>
       </div>
     </div>
   )

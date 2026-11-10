@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useSpectrum } from './useSpectrum.js'
 import MarqueeText from './MarqueeText'
 
@@ -7,6 +7,7 @@ import MarqueeText from './MarqueeText'
    ───────────────────────────────────────────────── */
 function PlayerDashboard({
   currentStationName, currentStationIndex, playbackState, canAnalyze,
+  codec, bitrate, timeZone,
   volume, currentShow, currentTrack, stationHasError, streamError, spectrumRef,
   onTogglePlay, onChangeVolume, onPrevStation, onNextStation,
 }) {
@@ -24,6 +25,9 @@ function PlayerDashboard({
     volume,
   })
 
+  /* Catalog metadata (codec + kbps) for the soundbar header label. */
+  const streamFormat = [codec, bitrate ? `${bitrate}k` : ''].filter(Boolean).join(' ')
+
   const modeLabel = isIdle
     ? 'IDLE'
     : hasError
@@ -35,7 +39,42 @@ function PlayerDashboard({
           : playbackState === 'playing'
             ? 'LIVE'
             : 'STOPPED'
-  const modeClass = hasError ? 'soundbar-mode error-state' : 'soundbar-mode'
+  const modeClass = hasError
+    ? 'soundbar-mode error-state'
+    : playbackState === 'loading'
+      ? 'soundbar-mode tuning-state'
+      : 'soundbar-mode'
+
+  /* Wall clock for the station's own timezone (from its EPG file), shown where
+     the volume readout used to sit. Ticks on the minute so the header does not
+     re-render the whole dashboard every second. */
+  const [clock, setClock] = useState(() => new Date())
+
+  useEffect(() => {
+    if (!timeZone) return
+    let timer
+    const tick = () => {
+      setClock(new Date())
+      timer = setTimeout(tick, 60000 - (Date.now() % 60000))
+    }
+    timer = setTimeout(tick, 60000 - (Date.now() % 60000))
+    return () => clearTimeout(timer)
+  }, [timeZone])
+
+  const stationClock = useMemo(() => {
+    if (!timeZone) return null
+    try {
+      const zone = new Intl.DateTimeFormat('en-GB', { timeZone, timeZoneName: 'short' })
+        .formatToParts(clock)
+        .find(p => p.type === 'timeZoneName')?.value || ''
+      const time = new Intl.DateTimeFormat('en-GB', {
+        timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      }).format(clock)
+      return { zone, time }
+    } catch {
+      return null   /* unknown zone: no clock rather than a wrong one */
+    }
+  }, [timeZone, clock])
 
   const [showEpgName, setShowEpgName] = useState(false)
 
@@ -80,7 +119,9 @@ function PlayerDashboard({
       >
         <div className="soundbar-header">
           <span className="soundbar-label-group">
-            <span className="soundbar-label">SPECTRUM</span>
+            {isLive && streamFormat && (
+              <span className="soundbar-label stream-format">{streamFormat}</span>
+            )}
             {spectrumMode === 'sim' && (
               <span
                 className="sim-badge"
@@ -89,7 +130,11 @@ function PlayerDashboard({
             )}
           </span>
           <span className={modeClass}>{modeLabel}</span>
-          <span className="soundbar-vol">VOL {Math.round(volume * 100)}</span>
+          {stationClock && (
+            <span className="soundbar-clock" title={timeZone}>
+              {stationClock.zone} {stationClock.time}
+            </span>
+          )}
         </div>
         <div className="soundbar-scale">
           <span className="scale-tick">+6</span>

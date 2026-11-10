@@ -225,7 +225,7 @@ function StationEditModal({ station, nextId, onClose, onSaved, onDeleted }) {
                 : `id ${values.id} · stations.csv line ${line}`}
             </div>
           </div>
-          <button type="button" className="epg-modal-close" onClick={onClose} aria-label="Close">
+          <button type="button" className="station-modal-close" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>

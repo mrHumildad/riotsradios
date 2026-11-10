@@ -1,8 +1,13 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import StationItem from './StationItem'
+import { orderStations } from '../lib/stationOrder.js'
 
-function StationList({ stations, currentStationIndex, isPlaying, onSelectStation, epgData, currentShows, trackTitles, onOpenEpg, onEditStation, onAddStation }) {
+function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, playbackState, onSelectStation, currentShows, trackTitles, onOpenStation, onEditStation, onAddStation }) {
   const listRef = useRef(null)
+  const favoriteSet = useMemo(() => new Set(favoriteIds || []), [favoriteIds])
+  /* Favourites float to the top, newest first; the rest keep catalog order.
+     Each row keeps its catalog index, so selection and playback are unaffected. */
+  const ordered = useMemo(() => orderStations(stations, favoriteIds), [stations, favoriteIds])
 
   useEffect(() => {
     if (currentStationIndex == null) return
@@ -17,7 +22,9 @@ function StationList({ stations, currentStationIndex, isPlaying, onSelectStation
       const delta = (itemRect.top + itemRect.height / 2) - (contRect.top + contRect.height / 2)
       container.scrollBy({ top: delta, behavior: 'smooth' })
     }
-  }, [currentStationIndex])
+    /* Re-centre when a favourite moves rows, so the station that is playing
+       cannot slide out of view because the list reordered around it. */
+  }, [currentStationIndex, ordered])
 
   return (
     <div className="station-list-wrapper">
@@ -36,18 +43,19 @@ function StationList({ stations, currentStationIndex, isPlaying, onSelectStation
         )}
       </div>
       <div className="station-list-inner" ref={listRef}>
-        {stations.map((station, index) => (
+        {ordered.map(({ station, index }) => (
         <StationItem
-          key={index}
+          key={station.id ?? index}
           station={station}
           index={index}
           isActive={currentStationIndex === index && isPlaying}
           isSelected={currentStationIndex === index}
+          playState={currentStationIndex === index ? playbackState : null}
+          isFavorite={favoriteSet.has(station.id)}
           onSelect={onSelectStation}
-          hasEpg={epgData.has(station.id)}
           currentShow={currentShows.get(station.id) || null}
           nowTitle={trackTitles?.[station.id] || ''}
-          onOpenEpg={onOpenEpg}
+          onOpenStation={onOpenStation}
           onEditStation={onEditStation}
          />
          ))}
