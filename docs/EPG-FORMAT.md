@@ -21,6 +21,7 @@ The same repository also owns the station catalog — `catalog/stations.csv` —
   "version": "2.0",
   "station": "Station Name",
   "station_id": 1,
+  "language": "es",
   "timezone": "Europe/Madrid",
   "last_updated": "2026-01-15",
   "source": "https://station.org/programacion",
@@ -31,6 +32,18 @@ The same repository also owns the station catalog — `catalog/stations.csv` —
   "days": [ ... ]
 }
 ```
+
+### Language
+
+`language` is optional but should be set: an ISO 639-1 code (`es`, `ca`, `eu`,
+`it`, `fr`, `de`, `nl`, `pt`, `en`). It states what listeners actually hear, and
+the channel list's LANG toggle groups stations by it. Catalan (`ca`) and Basque
+(`eu`) stations are all `ES` in the catalog, so this field — or the `language`
+column in `catalog/stations.csv` — is the only way to say so; without one of the
+two the player counts them as Spanish.
+
+The guide's own `language` wins over the catalog. `metadata.language` is read as
+a fallback when the top-level field is absent.
 
 ### Required Fields
 

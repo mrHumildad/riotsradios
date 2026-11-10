@@ -25,6 +25,7 @@ a station there, then `npm run catalog:sync` here.
 | `has_ads` | Free-form marker already in the data; it does not change playback |
 | `country` | Country name as radio-browser reports it — e.g. `Spain` |
 | `countrycode` | Two-letter ISO 3166-1 code — e.g. `ES` |
+| `language` | Optional ISO 639-1 code for the language listeners hear — `es`, `ca`, `eu`… Blank falls back to `countrycode`; Catalan and Basque rows are all `ES`, so they must set it. `lib/stationLanguage.js` reads it, and `lib/catalogLanguage.js` keeps it across `catalog:sync` until the EPG repo publishes the column |
 | `state` | The human place shown in the list, e.g. `9Barris, Barcelona` (radio-browser's field name for it) |
 | `url` | The stream the player loads. Required for an active row, `http(s)://`, no whitespace |
 | `url_http` | The station's plain-HTTP mirror, if known. `http://` only; stored, never played by the web build |
@@ -275,6 +276,8 @@ needs its unit test updated in the same commit — those modules are pure on pur
   that fails `assessCatalogCsv` is refused, and the last good copy stays in charge.
 - No `http://` stream on an active row; no whitespace in a URL.
 - `stream_broken` is `""` or `true` — nothing else.
+- The `language` column is lowercase ISO 639-1, never a display name; use `ca`
+  and `eu` for Catalan and Basque, and let a guide's own `language` win.
 - Health is generated, never authored; badges come from `healthBadge`.
 - The spectrum may be real or `SIM`, never a fabricated animation presented as real.
 - Station content and EPG schedules belong to the stations: keep `source`,

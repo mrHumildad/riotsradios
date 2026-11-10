@@ -5,6 +5,7 @@ import {
   formatMinutes,
   getCurrentShow,
   getDaySchedule,
+  getEpgWindow,
   normalizeProgram,
   parseClock,
 } from '../lib/epg.js'
@@ -15,6 +16,74 @@ const FILLER = { default_filler: { title: 'Music', category: 'musica' } }
 const TUE_0030 = new Date('2026-10-20T00:30:00Z')
 /** Tuesday 2026-10-20, 12:00 UTC. */
 const TUE_NOON = new Date('2026-10-20T12:00:00Z')
+
+test('getEpgWindow: centres on the station clock and clips programs to it', () => {
+  const epg = {
+    timezone: 'UTC',
+    days: [
+      {
+        day: 'tuesday',
+        programs: [
+          { start: '11:00', end: '12:00', title: 'Morning' },
+          { start: '12:00', end: '13:30', title: 'Noon' },
+        ],
+      },
+    ],
+  }
+  const window = getEpgWindow(epg, TUE_NOON)
+  assert.equal(window.startMin, 660)
+  assert.equal(window.endMin, 780)
+  assert.equal(window.nowMin, 720)
+  assert.deepEqual(
+    window.segments.map((s) => [s.title, s.startMin, s.endMin, s.isCurrent]),
+    [['Morning', 660, 720, false], ['Noon', 720, 780, true]]
+  )
+})
+
+test('getEpgWindow: reads the guide timezone, not the browser zone', () => {
+  const epg = {
+    timezone: 'Europe/Madrid',
+    days: [
+      {
+        day: 'tuesday',
+        programs: [
+          { start: '13:00', end: '14:00', title: 'Siesta' },
+          { start: '14:00', end: '16:00', title: 'Tarde' },
+        ],
+      },
+    ],
+  }
+  /* 12:00 UTC is 14:00 in Madrid, so the window is 13:00-15:00 local. */
+  const window = getEpgWindow(epg, TUE_NOON)
+  assert.equal(window.startMin, 780)
+  assert.equal(window.endMin, 900)
+  assert.deepEqual(
+    window.segments.map((s) => [s.title, s.startMin, s.endMin, s.isCurrent]),
+    [['Siesta', 780, 840, false], ['Tarde', 840, 900, true]]
+  )
+})
+
+test('getEpgWindow: carries yesterday cross-midnight tail into an early window', () => {
+  const epg = {
+    timezone: 'UTC',
+    days: [
+      { day: 'monday', programs: [{ start: '23:30', end: '00:30', crosses_midnight: true, title: 'Late' }] },
+      { day: 'tuesday', programs: [{ start: '01:00', end: '02:00', title: 'Dawn' }] },
+    ],
+  }
+  const window = getEpgWindow(epg, TUE_0030)
+  assert.equal(window.startMin, -30)
+  assert.equal(window.endMin, 90)
+  assert.deepEqual(
+    window.segments.map((s) => [s.title, s.startMin, s.endMin]),
+    [['Late', -30, 30], ['Dawn', 60, 90]]
+  )
+})
+
+test('getEpgWindow: null without a usable guide', () => {
+  assert.equal(getEpgWindow(null, TUE_NOON), null)
+  assert.equal(getEpgWindow({}, TUE_NOON), null)
+})
 
 test('parseClock: accepts HH:MM, 24:00 and rejects junk', () => {
   assert.equal(parseClock('09:30'), 570)

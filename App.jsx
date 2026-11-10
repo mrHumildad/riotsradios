@@ -277,6 +277,7 @@ const {
         onOpenStation={setStationModalStation}
         onEditStation={openEditor}
         onAddStation={openCreator}
+        epgByStation={epgData}
       />
 
       </div>

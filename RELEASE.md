@@ -3,13 +3,15 @@
 Copy-paste "What's new" text, newest first. CHANGELOG.md is the technical log;
 this file is only what listeners read.
 
-## Unreleased — pending
+## v1.4.0 — 2026-11-10
 
 **en-US**
 
 ```
-- New: 192 Radio Veronica, Tukker FM, Muziekknallers, Tiri 2, Tilos Rádió, Radio Seagull, SlaveFM, AccentFM, Echtepiraten.nl and Voice of Chongro
-- Every new channel streams over HTTPS, so it plays both in the app and on the website
+- New: the EPG button turns channel rows into a two-hour guide with the current time in the middle
+- New: the LANG button filters the channel list by the language you hear
+- New: 192 Radio Veronica, Tukker FM, Muziekknallers, Tiri 2, Tilos Rádió, Radio Seagull, SlaveFM, AccentFM, Echtepiraten.nl, Voice of Chongro and Epic Factory Underground
+- Catalan and Basque channels are now tagged as such
 ```
 
 ## v1.3.0 — 2026-11-09

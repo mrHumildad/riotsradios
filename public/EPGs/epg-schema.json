@@ -21,6 +21,11 @@
       "minimum": 1,
       "description": "Unique station identifier matching stations.js"
     },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}$",
+      "description": "ISO 639-1 language of the programmes (es, ca, eu, it, fr, de, nl, pt, en). The player uses it for its language filter; Catalan (ca) and Basque (eu) stations all have country code ES, so the guide is where their language is stated."
+    },
     "schedule_type": {
       "type": "string",
       "default": "weekly",

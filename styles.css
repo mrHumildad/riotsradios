@@ -1218,30 +1218,79 @@ input[type="range"]::-moz-range-track {
    SECTION 3 — STATION LIST  ("channel list")
    ========================================================= */
 
-/* header bar above list */
+/* header bar above list: two compact toggles, no title text */
 .station-section-label {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.4rem, 2vw, 0.65rem);
-  font-size: clamp(0.6rem, 1.4dvh, 0.68rem);
-  letter-spacing: .3em;
-  text-transform: uppercase;
-  color: var(--warm-gray);
-  text-align: center;
-  white-space: nowrap;
+  gap: clamp(0.35rem, 1.8vw, 0.55rem);
+  min-width: 0;
   padding: 0.5rem 0 0.4rem;
 }
-.station-section-label::before,
-.station-section-label::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-warm));
+
+.station-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45em;
+  font-family: var(--font-stencil);
+  font-size: clamp(0.55rem, 1.25dvh, 0.62rem);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  color: var(--warm-gray);
+  background: transparent;
+  border: 1px solid var(--border-warm);
+  border-radius: 2px;
+  padding: 3px 10px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
 }
-.station-section-label::after {
-  background: linear-gradient(90deg, var(--border-warm), transparent);
+
+/* The LANG button keeps one width across ALL and the language codes, so
+   cycling never nudges the EPG toggle. */
+.station-filter-btn:first-child {
+  min-width: 5.6rem;
+}
+
+.station-filter-key {
+  color: var(--warm-gray);
+  opacity: .75;
+}
+
+.station-filter-value {
+  color: inherit;
+  font-weight: 700;
+}
+
+.station-filter-btn:hover:not(:disabled) {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.station-filter-btn.is-on {
+  color: var(--amber);
+  border-color: var(--amber);
+  background: rgba(232, 160, 0, 0.08);
+}
+
+.station-filter-btn.is-on .station-filter-key {
+  color: var(--amber-dim);
+  opacity: 1;
+}
+
+.station-filter-btn:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.station-filter-btn:disabled {
+  opacity: .45;
+  cursor: default;
 }
 
 .station-list-wrapper {
@@ -1788,6 +1837,110 @@ input[type="range"]::-moz-range-track {
   flex-shrink: 0;
   vertical-align: middle;
   margin-right: 4px;
+}
+
+/* ---- Channel list EPG lane — a two-hour rolling window ----
+   With the EPG toggle on, a station that has a guide keeps only its favourite
+   marker and icon; the rest of the row becomes a programme lane. Non-guide
+   stations at the bottom keep their normal row. */
+.station-item.is-epg {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.station-epg {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.3rem, 1.6vw, 0.6rem);
+  min-width: 0;
+}
+
+.station-item.is-epg .station-icon {
+  width: clamp(1.8rem, 5.4dvh, 2.5rem);
+  height: clamp(1.8rem, 5.4dvh, 2.5rem);
+}
+
+.epg-lane-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.epg-lane {
+  position: relative;
+  width: 100%;
+  height: clamp(1.4rem, 4.2dvh, 2rem);
+  background: var(--vu-bg);
+  border: 1px solid #2a1a00;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.75);
+}
+
+/* Hour ruler under the lane: window start on the left, end on the right. */
+.epg-lane-times {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.15rem;
+  font-family: var(--font-stencil);
+  font-size: 0.5rem;
+  letter-spacing: .1em;
+  line-height: 1;
+  color: var(--amber-label);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* one programme block, positioned by its share of the two-hour window */
+.epg-slot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 0.3rem;
+  background: var(--panel-mid);
+  border: 1px solid var(--border-warm);
+  overflow: hidden;
+}
+
+.epg-slot.is-current {
+  background: rgba(232,160,0,.14);
+  border-color: var(--amber-dim);
+}
+
+.epg-slot-title {
+  font-family: var(--font-stencil);
+  font-size: 0.55rem;
+  letter-spacing: .04em;
+  line-height: 1;
+  color: var(--warm-gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epg-slot.is-current .epg-slot-title {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+/* the wall clock — a hairline at the exact middle of the window */
+.epg-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--red-live);
+  box-shadow: 0 0 4px var(--red-live);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* =========================================================
@@ -2655,8 +2808,6 @@ input[type="range"]::-moz-range-track {
 }
 
 /* + NEW station button in the channel header */
-.station-section-label { gap: 8px; }
-.station-section-label > span { flex: 0 0 auto; }
 
 .station-add-btn {
   font-family: var(--font-stencil);

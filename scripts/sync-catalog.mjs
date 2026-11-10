@@ -11,12 +11,17 @@
 //
 // A network failure is not a catalog failure: `--check` warns and exits 0 so an
 // offline build still works. Pass `--strict` (CI) to make it fail instead.
+//
+// The snapshot also carries an optional `language` column that the published file
+// does not have yet (ca/eu cannot come from a country code). `applyLanguageOverlay`
+// re-applies it on every sync, so adopting a new catalog never drops it.
 
 import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { REQUIRED_COLUMNS, parseStationRows } from '../lib/stations.js'
 import { assessCatalogCsv, catalogHeaders } from '../lib/catalog.js'
 import { catalogUrl, parseCatalogManifest } from '../lib/catalogFeed.js'
+import { applyLanguageOverlay } from '../lib/catalogLanguage.js'
 
 const CSV_PATH = 'stations.csv'
 const HEALTH_PATH = 'data/health.json'
@@ -196,14 +201,17 @@ async function main() {
     if (args.strict) console.warn(`⚠️  ${HEALTH_PATH} not synced: ${health.reason}`)
   }
 
+  /* Keep the snapshot's `language` column across the swap. Once the published
+     file has its own column, `adopted` is the published bytes unchanged. */
+  const adopted = applyLanguageOverlay(remote, local || '')
   const localHash = local === null ? null : sha256(local)
-  if (localHash === published) {
+  if (localHash === sha256(adopted)) {
     console.log(`✅ ${CSV_PATH} matches the published catalog (${manifest.version.slice(0, 12)})`)
     reportHealth(health, args.mode)
     return 0
   }
 
-  const diff = diffCatalog(local, remote)
+  const diff = diffCatalog(local, adopted)
   const describe = () =>
     [
       `published ${manifest.version.slice(0, 12)} · ${verdict.summary.playable} playable of ${verdict.summary.rows} rows`,
@@ -218,7 +226,7 @@ async function main() {
     return 2
   }
 
-  await writeFile(CSV_PATH, remote, 'utf8')
+  await writeFile(CSV_PATH, adopted, 'utf8')
   console.log(`✅ ${CSV_PATH} updated\n${describe()}`)
   reportHealth(health, args.mode)
   return 0

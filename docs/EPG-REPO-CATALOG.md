@@ -138,6 +138,16 @@ await writeFile('public/catalog/manifest.json', JSON.stringify({
    and published next to the CSV; the app copies it at every sync.
 5. **Keep the columns identical** to this repository's `stations.csv`; a renamed
    column is a rejected catalog, not a warning.
+6. **State the language where the country cannot.** `catalog/stations.csv` takes an
+   optional `language` column (ISO 639-1), and a guide's own `language` beats it.
+   Rows in Catalan (`ca`) and Basque (`eu`) are all `ES`, so one of the two must
+   carry the code or the app's LANG toggle counts them as Spanish. Leaving the
+   column blank falls back to the country code.
+
+   This repository's snapshot already carries the column and
+   `lib/catalogLanguage.js` re-appends it to every adopted catalog until the
+   published file has one of its own — after that, the published values win and
+   the overlay is a passthrough.
 
 ## Client side (already in place)
 

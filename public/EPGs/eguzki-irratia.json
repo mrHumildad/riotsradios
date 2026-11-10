@@ -2,6 +2,7 @@
   "version": "2.0",
   "station": "Eguzki Irratia",
   "station_id": 4,
+  "language": "eu",
   "schedule_type": "weekly",
   "timezone": "Europe/Madrid",
   "last_updated": "2026-11-08",

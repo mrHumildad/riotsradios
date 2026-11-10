@@ -167,6 +167,9 @@ async function main() {
     if (station.countrycode && !/^[A-Z]{2}$/.test(station.countrycode)) {
       warn(line, `${label(station)}: countrycode should be a two-letter ISO code — ${JSON.stringify(station.countrycode)}`)
     }
+    if (station.language && !/^[a-z]{2}$/.test(station.language)) {
+      warn(line, `${label(station)}: language should be a lowercase ISO 639-1 code — ${JSON.stringify(station.language)}`)
+    }
     if (station.bitrate && !/^\d+$/.test(station.bitrate)) {
       warn(line, `${label(station)}: bitrate should be whole kbps — ${JSON.stringify(station.bitrate)}`)
     }
