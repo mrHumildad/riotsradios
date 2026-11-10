@@ -75,9 +75,9 @@ changes nothing on either channel — it already plays on the site.
 
 ## 4. The `crossOrigin` trap — measured on the device
 
-`data/health.json` was probed from `https://mrhumildad.github.io` (see
-`PAGE_ORIGIN` in `scripts/probe-stations.js`), but the app's origin is
-`http://localhost`. So the snapshot has to be re-checked, not trusted. Measured
+`data/health.json` is probed in [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg)
+from `https://mrhumildad.github.io` (see `PAGE_ORIGIN` in `scripts/probe-catalog.mjs`),
+but the app's origin is `http://localhost`. So the snapshot has to be re-checked, not trusted. Measured
 in the app's WebView on the OPPO (Android 15), loading each stream as a media
 element with `crossOrigin = "anonymous"` — exactly what the app does for
 analyzable stations:
@@ -101,9 +101,9 @@ keeps the conservative rule for the app — only `cors: "any"` is analyzable whe
 show `SIM` in the app although a real spectrum would work. The website is
 unchanged.
 
-The clean fix is data, not guesswork: have `scripts/probe-stations.js` record a
-second field (`cors_app`, probed with `Origin: http://localhost`) and gate on
-that. The website keeps its own origin's answer. Do not simply re-probe the
+The clean fix is data, not guesswork: have riotsradios-epg's
+`scripts/probe-catalog.mjs` record a second field (`cors_app`, probed with
+`Origin: http://localhost`) and gate on that. The website keeps its own origin's answer. Do not simply re-probe the
 existing field from the app — that would invert the same mistake for the site.
 
 ## 5. What still will not work in the app
@@ -124,7 +124,7 @@ existing field from the app — that would invert the same mistake for the site.
 
 Per row, never in bulk — `stream_broken` also covers genuinely dead URLs:
 
-1. Probe the row (`npm run probe:health`) and confirm it answers audio.
+1. Probe the row in riotsradios-epg (`npm run probe -- --only <id>`) and confirm it answers audio.
 2. Add `{ "host", "station_ids": [id], "note" }` to `data/cleartext-hosts.json`.
 3. `npm run cleartext:config` — regenerates the Android network security config
    from that list. `android:sync` runs it; the validator fails if the XML is

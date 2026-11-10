@@ -1,0 +1,54 @@
+name: Catalog sync
+
+# riotsradios-epg owns stations.csv; this repository ships a validated snapshot.
+# This job adopts a newer published catalog and opens a PR, so the bundled copy,
+# the health probe and the Android allowlist never drift far behind. Runtime sync
+# (lib/catalogFeed.js) already covers listeners between releases.
+
+on:
+  schedule:
+    # Daily, after the health probe.
+    - cron: '43 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Adopt the published catalog
+        run: npm run catalog:sync
+
+      - name: Validate the adopted snapshot
+        run: npm run validate:stations
+
+      - name: Open a PR when the catalog moved
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- stations.csv data/health.json; then
+            echo "Catalog and health snapshots already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/catalog-sync
+          git add stations.csv data/health.json
+          git commit -m "chore(catalog): sync catalog and health from riotsradios-epg"
+          git push --force origin chore/catalog-sync
+          gh pr create --base main --head chore/catalog-sync \
+            --title "chore(catalog): sync catalog and health from riotsradios-epg" \
+            --body "Adopted the catalog and health snapshot published by riotsradios-epg. Review the station and badge diff, then merge: \`validate:stations\` passed on this snapshot." \
+            || echo "A catalog sync PR is already open"

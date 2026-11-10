@@ -145,7 +145,8 @@ audio focus the moment it plays anything. RIOTSRADIOS *is* the music, so:
   `data/health.json` says the station allows CORS; setting it on a CORS-less stream
   makes the element fail to load. Keep that order.
 - **CORS measurements in `data/health.json` were taken from
-  `https://mrhumildad.github.io`** (`PAGE_ORIGIN` in `scripts/probe-stations.js`).
+  `https://mrhumildad.github.io`** (`PAGE_ORIGIN` in riotsradios-epg's
+  `scripts/probe-catalog.mjs`; the file here is a synced snapshot).
   Inside the app the origin is Capacitor's local server, so `cors: "any"` still
   holds but `cors: "origin"` may not. Re-probe from the app's own origin before
   trusting the spectrum on device.

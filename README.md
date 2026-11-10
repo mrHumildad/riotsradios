@@ -34,7 +34,7 @@ See `docs/EPG-FORMAT.md` for the v2 schema specification.
 Quick summary:
 - Each program has `start` and `end` wall-clock times (`"HH:MM"`) — no blocks or math required
 - Define unique shows once in the `shows` catalog and reference them by `show_id` in daily grids
-- Copy the template from `riotsradios-epg`, add the guide under its `public/EPGs/`, and point `config/stations.csv` at it
+- Copy the template from `riotsradios-epg`, add the guide under its `public/EPGs/`, and point `catalog/stations.csv` at it
 - Validate it there and rebuild the manifest; open a PR against `riotsradios-epg`
 - Keep the same file in this repository's `public/EPGs/` as the offline fallback and run `npm run validate:epg`
 
@@ -86,7 +86,9 @@ Available stations include:
 
 ## Station Catalog
 
-`stations.csv` is the single source of truth for stations. Validate it before sending a PR:
+`stations.csv` is owned by the separate [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg) repository, which publishes it as `catalog/stations.csv` next to the guides. The copy committed here is a **validated snapshot**: what a fresh install and a cold Android start render, and what the offline build ships. Add or fix stations in the EPG repository — see `docs/EPG-REPO-CATALOG.md` for the publish contract.
+
+Validate the snapshot before sending a PR:
 
 ```bash
 npm run validate:stations
@@ -104,7 +106,18 @@ In development every row in the channel list carries an **EDIT** button. It open
 
 The **+ NEW** button above the list opens the same modal blank and appends a row with the next free id (a name and stream URL are required). A station's modal also has **DELETE**, which removes its row after a confirmation that spells out the cost: its id and health history go with it, and the rows below shift up a line. For a station that may return, tick **Hidden** instead. Neither the buttons nor the write endpoint (`scripts/catalog-plugin.mjs`, a dev-server middleware) exists in the production build.
 
-A station with no HTTPS mirror at all can still be carried **in the Android app only**: add its host and id to `data/cleartext-hosts.json`, run `npm run cleartext:config` (regenerates the app's network security config from that list), then clear `stream_broken`. The validator accepts it as app-only and the GitHub Pages build keeps hiding it — see `docs/CORS-IN-APP.md`.
+A station with no HTTPS mirror at all can still be carried **in the Android app only**: add its host and id to `data/cleartext-hosts.json`, run `npm run cleartext:config` (regenerates the app's network security config from that list), then clear `stream_broken`. The validator accepts it as app-only and the GitHub Pages build keeps hiding it — see `docs/CORS-IN-APP.md`. The allowlist is a device policy and stays in this repository, so it still needs an entry here after the station is published by the EPG repo.
+
+### Syncing the catalog
+
+The player loads the published catalog in the background on launch and adopts it when its version changed, so a station added to the EPG repository reaches listeners without a new release. The snapshot keeps the app honest meanwhile:
+
+```bash
+npm run catalog:sync    # adopt the published catalog into stations.csv
+npm run catalog:check   # exit 2 when this snapshot has drifted (runs on prebuild + CI)
+```
+
+A network failure only warns, so an offline build still works. `VITE_CATALOG_BASE_URL` points the feed at a staging deployment; `VITE_CATALOG_SYNC=0` disables the runtime sync, and `=1` forces it on in development (where it is off by default because the dev editor writes `stations.csv`).
 
 ## Development
 
@@ -121,16 +134,16 @@ npm run build
 
 ## Stream Health
 
-Every station is probed on a schedule; the result is bundled so the list can label what is actually working:
+The probe lives in [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg), which owns `catalog/health.json` and refreshes it daily. `data/health.json` here is a snapshot of that file, synced together with the catalog:
 
 ```bash
-npm run probe:health
+npm run catalog:sync    # adopts stations.csv and data/health.json
 ```
 
-- Writes `data/health.json` (status, HTTP code, content type, CORS capability, latency, consecutive failures).
+- `data/health.json` holds status, HTTP code, content type, CORS capability, latency and consecutive failures.
 - The app shows `UNSTABLE` after a failed check, `OFFLINE` after three in a row, and `HTTP ONLY` for streams browsers block on HTTPS. `LIVE` is implicit.
-- `.github/workflows/health.yml` refreshes the snapshot daily and commits it; `.github/workflows/ci.yml` runs tests, catalog/EPG validation and the build on every push and PR.
-- `cors` in the snapshot is what a future real audio analyzer needs: `any`/`origin` can be analyzed, `null` cannot.
+- `.github/workflows/catalog-sync.yml` refreshes both snapshots daily and opens a PR; `.github/workflows/ci.yml` runs tests, catalog/EPG validation and the build on every push and PR.
+- `cors` in the snapshot is what the audio analyzer needs: `any`/`origin` can be analyzed, `null` cannot.
 
 ## Tests
 

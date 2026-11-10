@@ -1,13 +1,14 @@
 import csvRaw from './stations.csv?raw'
 import healthRaw from './data/health.json'
 import cleartextAllowlist from './data/cleartext-hosts.json'
-import { parseStationRows, isPlayableStation } from './lib/stations.js'
+import { buildCatalog, assessCatalogCsv } from './lib/catalog.js'
+import { readCatalogCache, writeCatalogCache } from './lib/catalogCache.js'
+import { fetchCatalog, CATALOG_BASE_URL } from './lib/catalogFeed.js'
 import { parseAllowlist } from './lib/cleartext.js'
 import { buildStationReport, describeStation } from './lib/stationReport.js'
 
 export { isValidStreamUrl, parseStationRows, isPlayableStation } from './lib/stations.js'
-
-const allRows = parseStationRows(csvRaw)
+export { catalogSummary, assessCatalogCsv } from './lib/catalog.js'
 
 /* Only the Android bundle may render plain-HTTP stations: it serves its own
    origin over http and its network security config permits these hosts. The
@@ -26,11 +27,116 @@ const DEV = import.meta.env.DEV
 
 const canPlay = (station) => isPlayableStation(station, { cleartextHosts })
 
-/* `health` comes from the last probe run (data/health.json); null when a
-   station has not been probed yet. */
-export const stations = allRows
-  .filter((station) => DEV || canPlay(station))
-  .map((station) => ({ ...station, health: healthRaw[String(station.id)] || null }))
+/* ── catalog source ────────────────────────────────────────────────
+   riotsradios-epg owns stations.csv. The file bundled here is its validated
+   snapshot: it renders instantly, works offline and is what a cold Android
+   start sees. A copy of the last published catalog is kept in storage, and the
+   publish is re-read in the background on every launch — see syncCatalog(). */
+
+let healthSnapshot = healthRaw
+let source = { version: null, csv: csvRaw, origin: 'bundled' }
+
+if (!DEV) {
+  const cached = readCatalogCache()
+  /* A cached copy is re-checked on the way in: storage can be edited by hand or
+     left behind by an older release with different rules. */
+  if (cached && assessCatalogCsv(cached.csv).ok) {
+    source = { version: cached.version, csv: cached.csv, origin: 'cache' }
+    if (cached.health) healthSnapshot = { ...healthRaw, ...cached.health }
+  }
+}
+
+/**
+ * The catalog the player renders. Stable identity: syncCatalog() splices into
+ * this array, so `logic.js` and the list keep pointing at the same stations.
+ */
+export const stations = buildCatalog(source.csv, {
+  health: healthSnapshot,
+  cleartextHosts,
+  hideUnplayable: !DEV,
+})
+
+/** Version (SHA-256) of the catalog currently in use; null for the bundled one. */
+export function getCatalogVersion() {
+  return source.version
+}
+
+/** 'bundled' | 'cache' | 'remote' | 'dev' — for the dev log only. */
+export function getCatalogOrigin() {
+  return source.origin
+}
+
+/**
+ * Sync is on in production builds and off in development, where stations.csv is
+ * the file the editor writes. `VITE_CATALOG_SYNC=1` forces it on (to try the
+ * feed in dev), `VITE_CATALOG_SYNC=0` disables it everywhere (kill switch).
+ */
+const CATALOG_SYNC_FLAG = import.meta.env?.VITE_CATALOG_SYNC
+export function catalogSyncEnabled() {
+  if (CATALOG_SYNC_FLAG === '0' || CATALOG_SYNC_FLAG === 'false') return false
+  if (CATALOG_SYNC_FLAG === '1' || CATALOG_SYNC_FLAG === 'true') return !!CATALOG_BASE_URL
+  return !DEV && !!CATALOG_BASE_URL
+}
+
+let inFlight = null
+
+/**
+ * Re-read the published catalog and adopt it when it is newer.
+ *
+ * Never throws and never blocks a render: an unreachable feed, a rejected file or
+ * an unchanged version all leave the current catalog in place. A remote file that
+ * fails `assessCatalogCsv` — wrong columns, duplicate ids, a suspicious drop in
+ * playable rows — is refused rather than shown.
+ *
+ * @returns {Promise<{ changed: boolean, reason?: string, version?: string,
+ *   added?: number[], removed?: number[], errors?: string[] }>}
+ */
+export function syncCatalog() {
+  if (!catalogSyncEnabled()) return Promise.resolve({ changed: false, reason: 'disabled' })
+  if (inFlight) return inFlight
+
+  inFlight = (async () => {
+    const remote = await fetchCatalog({ ifVersion: source.version })
+    if (!remote) return { changed: false, reason: 'unreachable' }
+    if (!remote.changed) return { changed: false, reason: 'current' }
+
+    const verdict = assessCatalogCsv(remote.csv, { current: stations })
+    if (!verdict.ok) {
+      if (DEV) console.warn('[catalog] refused the published catalog:', verdict.errors)
+      return { changed: false, reason: 'rejected', errors: verdict.errors }
+    }
+
+    const nextHealth = remote.health
+      ? { ...healthSnapshot, ...remote.health }
+      : healthSnapshot
+    const next = buildCatalog(remote.csv, {
+      health: nextHealth,
+      cleartextHosts,
+      hideUnplayable: !DEV,
+    })
+
+    const before = new Map(stations.map((station) => [station.id, station]))
+    const added = next.filter((station) => !before.has(station.id)).map((station) => station.id)
+    const removed = [...before.keys()].filter((id) => !next.some((station) => station.id === id))
+
+    healthSnapshot = nextHealth
+    stations.splice(0, stations.length, ...next)
+    source = { version: remote.version, csv: remote.csv, origin: 'remote' }
+    writeCatalogCache(remote.version, remote.csv, nextHealth)
+
+    if (DEV) {
+      console.info(
+        `[catalog] synced ${remote.version.slice(0, 12)} · ${added.length} new · ${removed.length} gone`,
+        { added, removed }
+      )
+    }
+    return { changed: true, version: remote.version, added, removed }
+  })()
+    .catch(() => ({ changed: false, reason: 'error' }))
+    .finally(() => { inFlight = null })
+
+  return inFlight
+}
 
 /**
  * Re-read the catalog from the dev editor API, in place.
@@ -55,6 +161,7 @@ export async function refreshStations() {
       health: healthRaw[String(row.values.id)] || null,
     }))
     stations.splice(0, stations.length, ...next.filter((station) => DEV || canPlay(station)))
+    source = { ...source, version: null, origin: 'dev' }
     return true
   } catch {
     return false

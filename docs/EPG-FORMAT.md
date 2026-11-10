@@ -6,6 +6,8 @@ The Electronic Program Guide (EPG) tells the RIOTSRADIOS player what's playing o
 
 The guides are maintained in the separate [riotsradios-epg](https://github.com/mrHumildad/riotsradios-epg) repository and published through its manifest. Files under `public/EPGs/` here are the player's offline fallback.
 
+The same repository also owns the station catalog — `catalog/stations.csv` — which the player mirrors as its own `stations.csv` snapshot and resyncs at runtime. See `docs/EPG-REPO-CATALOG.md` for that contract; the `station_id` rules below are unchanged.
+
 ## Key Principles
 
 - **Use IDs**: Define each unique program once in the `shows` catalog and reference it by `show_id` in your daily grid. This avoids repeating the same title/category/url every day.
@@ -36,7 +38,7 @@ The guides are maintained in the separate [riotsradios-epg](https://github.com/m
 |-------|-------------|
 | `version` | Must be `"2.0"` |
 | `station` | Human-readable station name |
-| `station_id` | Integer matching the station ID in the app's `stations.csv` and the EPG repo's `config/stations.csv` |
+| `station_id` | Integer matching the station ID in the app's `stations.csv` and the EPG repo's `catalog/stations.csv` |
 | `timezone` | IANA timezone (e.g., `Europe/Madrid`, `America/New_York`) |
 | `days` | Array of 7 day objects (or fewer if partial schedule) |
 
@@ -106,7 +108,7 @@ Use 24-hour format with leading zeros:
 
 ## File Naming
 
-In `riotsradios-epg`, save the file in `public/EPGs/`, add it to the station's `epg_file` column in `config/stations.csv`, validate it, and rebuild the manifest. The app reads the manifest by station id.
+In `riotsradios-epg`, save the file in `public/EPGs/`, add it to the station's `epg_file` column in `catalog/stations.csv`, validate it, and rebuild the manifest. The app reads the manifest by station id.
 
 For the bundled fallback in this repository, save the same file under `public/EPGs/` and set the station's `epg_file` in `stations.csv`. The player uses it only when the remote manifest or that station's remote guide cannot be loaded.
 

@@ -1,5 +1,11 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { stations, logStationClick } from './stations.js'
+import {
+  stations,
+  logStationClick,
+  syncCatalog,
+  catalogSyncEnabled,
+  getCatalogVersion,
+} from './stations.js'
 import { createPlaybackController } from './lib/playbackController.js'
 import { createSpectrumAnalyzer } from './lib/spectrumAnalyzer.js'
 import { createNativeSpectrum, nativePlaybackAvailable } from './lib/nativeSpectrum.js'
@@ -54,6 +60,9 @@ export function useRadioLogic() {
   const [epgData, setEpgData] = useState(new Map())
   const [nowPlaying, setNowPlaying] = useState(new Map())
   const [timeTick, setTimeTick] = useState(0)
+  /* Bumped when a newer published catalog replaces the bundled one; every
+     station-derived effect below depends on it. */
+  const [catalogVersion, setCatalogVersion] = useState(getCatalogVersion)
 
   const applyState = useCallback((next) => {
     setPlaybackState(next)
@@ -180,6 +189,25 @@ export function useRadioLogic() {
     return () => window.removeEventListener('online', onOnline)
   }, [])
 
+  /* The catalog is re-read in the background: the list renders from the copy on
+     the device first, and a newer published catalog is adopted when it arrives.
+     Indices move with the swap, so the playing station is tracked by id. */
+  useEffect(() => {
+    if (!catalogSyncEnabled()) return
+    let disposed = false
+    syncCatalog()
+      .then((result) => {
+        if (disposed || !result?.changed) return
+        const playingId = stations[currentIndexRef.current]?.id
+        const nextIndex = Math.max(0, stations.findIndex((station) => station.id === playingId))
+        currentIndexRef.current = nextIndex
+        setCurrentStationIndex(nextIndex)
+        setCatalogVersion(getCatalogVersion())
+      })
+      .catch(() => {})
+    return () => { disposed = true }
+  }, [])
+
   useEffect(() => {
     let disposed = false
     loadEpgData({ stations })
@@ -188,7 +216,7 @@ export function useRadioLogic() {
       })
       .catch(() => {})
     return () => { disposed = true }
-  }, [])
+  }, [catalogVersion])
 
   /* ICY titles for the stations whose server allows the Icy-MetaData preflight.
      Nothing is invented: a station that cannot be read simply has no entry. */
@@ -255,7 +283,8 @@ export function useRadioLogic() {
     return () => {
       disposed = true
     }
-  }, [])
+    /* A synced catalog brings stations this pump has never seen. */
+  }, [catalogVersion])
 
   const currentShows = useMemo(() => {
     const now = new Date()
