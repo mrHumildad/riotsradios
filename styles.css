@@ -751,8 +751,10 @@ body::after {
 }
 
 .soundbar-header {
-  display: flex;
-  justify-content: space-between;
+  /* Symmetric side columns keep the mode pill dead-centre even when the codec
+     label, SIM badge or clock are missing or change width. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   position: relative;
   z-index: 5;
@@ -762,6 +764,8 @@ body::after {
 .soundbar-label-group {
   display: flex;
   align-items: center;
+  justify-self: start;
+  min-width: 0;
   gap: 0.35rem;
 }
 
@@ -793,6 +797,8 @@ body::after {
 }
 
 .soundbar-mode {
+  justify-self: center;
+  white-space: nowrap;
   font-size: 0.58rem;
   letter-spacing: .3em;
   text-transform: uppercase;
@@ -838,8 +844,11 @@ body::after {
 /* Station local time replaces the old volume readout; tabular figures keep
    the header from twitching as the minutes change. */
 .soundbar-clock {
+  justify-self: end;
+  min-width: 0;
   font-size: 0.58rem;
-  letter-spacing: .2em;
+  /* Compact token (ITA(23:09)): punctuation reads better with less tracking. */
+  letter-spacing: .08em;
   color: var(--amber-label);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
@@ -1355,6 +1364,20 @@ input[type="range"]::-moz-range-track {
   line-height: 1.35;
 }
 
+/* Third line, shared: the place and the stream's health badge alternate in
+   this slot, so a failing stream never pushes the row to a fifth line. */
+.station-meta-line {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 1.05rem;
+}
+
+.station-meta-line > .mq {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
 .station-location-line {
   font-size: 0.72rem;
   color: var(--warm-gray);
@@ -1432,7 +1455,7 @@ input[type="range"]::-moz-range-track {
 /* Health badge (from the last probe snapshot) */
 .health-badge {
   display: inline-block;
-  margin-top: 0.15rem;
+  margin-top: 0;
   font-size: 0.55rem;
   letter-spacing: .18em;
   text-transform: uppercase;

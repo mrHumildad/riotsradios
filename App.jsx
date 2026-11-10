@@ -253,6 +253,7 @@ const {
          codec={currentStationObject?.codec}
          bitrate={currentStationObject?.bitrate}
          timeZone={currentTimeZone}
+         countryCode={currentStationObject?.countrycode}
          volume={volume}
          currentShow={currentShow}
          currentTrack={currentTrack}

@@ -7,7 +7,7 @@ import MarqueeText from './MarqueeText'
    ───────────────────────────────────────────────── */
 function PlayerDashboard({
   currentStationName, currentStationIndex, playbackState, canAnalyze,
-  codec, bitrate, timeZone,
+  codec, bitrate, timeZone, countryCode,
   volume, currentShow, currentTrack, stationHasError, streamError, spectrumRef,
   onTogglePlay, onChangeVolume, onPrevStation, onNextStation,
 }) {
@@ -62,19 +62,20 @@ function PlayerDashboard({
   }, [timeZone])
 
   const stationClock = useMemo(() => {
-    if (!timeZone) return null
+    /* The readout is "NATION(hh:mm)": a zone to read the time and a catalog
+       country to label it. A station with neither — or with only one of the
+       two — shows no clock at all rather than a bare or unlabelled time. */
+    const nation = String(countryCode || '').trim().toUpperCase()
+    if (!timeZone || !nation) return null
     try {
-      const zone = new Intl.DateTimeFormat('en-GB', { timeZone, timeZoneName: 'short' })
-        .formatToParts(clock)
-        .find(p => p.type === 'timeZoneName')?.value || ''
       const time = new Intl.DateTimeFormat('en-GB', {
         timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
       }).format(clock)
-      return { zone, time }
+      return { nation, time }
     } catch {
       return null   /* unknown zone: no clock rather than a wrong one */
     }
-  }, [timeZone, clock])
+  }, [timeZone, clock, countryCode])
 
   const [showEpgName, setShowEpgName] = useState(false)
 
@@ -132,7 +133,7 @@ function PlayerDashboard({
           <span className={modeClass}>{modeLabel}</span>
           {stationClock && (
             <span className="soundbar-clock" title={timeZone}>
-              {stationClock.zone} {stationClock.time}
+              {stationClock.nation}({stationClock.time})
             </span>
           )}
         </div>
