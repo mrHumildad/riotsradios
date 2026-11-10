@@ -11,12 +11,20 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
      able to bring it back — so the failure is component state that resets when
      the URL changes, never a style set on the DOM node by the error handler. */
   const [iconFailed, setIconFailed] = useState(false)
+  /* Which of the two third-line fields is showing. */
+  const [metaStep, setMetaStep] = useState(0)
   const badge = healthBadge(station.health)
   const place = stationPlace(station)
   /* Second line: the catalog's free-text place (city, province for most rows)
      with the country code in brackets after it. */
   const countryCode = String(station.countrycode || '').trim()
   const placeLine = place && countryCode ? `${place} (${countryCode})` : place
+  /* The place and the stream's health share one line: they alternate in place
+     instead of the badge pushing the row to a fifth line. A station with only
+     one of the two simply shows that one. */
+  const showBadge = Boolean(badge && badge.tone !== 'ok')
+  const metaKinds = [placeLine && 'place', showBadge && 'badge'].filter(Boolean)
+  const metaKey = metaKinds.join('|')
   /* The row the player owns also reports what the stream is doing: stopped is
      left to the plain red selected style, error and loading get their own
      blinking marker. A stalled stream is a failure, so it blinks like an
@@ -47,6 +55,17 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
   }, [headlineKey])
 
   const headlineKind = headline[cycleStep % headline.length]
+
+  /* Same cadence as the headline cycle, restarting when a field appears or
+     disappears (a health refresh can change the badge). */
+  useEffect(() => {
+    setMetaStep(0)
+    if (metaKinds.length < 2) return undefined
+    const id = setInterval(() => setMetaStep(step => step + 1), 4000)
+    return () => clearInterval(id)
+  }, [metaKey])
+
+  const metaKind = metaKinds.length ? metaKinds[metaStep % metaKinds.length] : null
 
   const liveIndicator = currentShow?.live
     ? <span className="epg-live-dot" />
@@ -124,9 +143,14 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
               <MarqueeText className="station-name-line" text={station.name || '(unlisted)'} />
             )}
           </div>
-          {placeLine && <MarqueeText className="station-location-line" text={placeLine} />}
-          {badge && badge.tone !== 'ok' && (
-            <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
+          {metaKind && (
+            <div className="station-meta-line">
+              {metaKind === 'badge' ? (
+                <span className={`health-badge ${badge.tone}`} title={badge.title}>{badge.label}</span>
+              ) : (
+                <MarqueeText className="station-location-line" text={placeLine} />
+              )}
+            </div>
           )}
         </div>
       </div>
