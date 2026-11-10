@@ -1,5 +1,11 @@
 # riotsradios
 
+## 1.4.0
+
+### Minor Changes
+
+- The channel list gains an EPG lane: the EPG toggle turns every station with a guide into a two-hour programme window centred on the station's own clock, with the current time marked in the middle, while stations without a guide keep their normal row at the bottom. A LANG toggle cycles through the languages the catalog carries, reading the new optional `language` column so Catalan and Basque stations are no longer counted as Spanish. Eleven new stations and refreshed guides come with it.
+
 ## 1.3.0
 
 ### Minor Changes
