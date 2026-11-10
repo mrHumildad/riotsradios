@@ -2,6 +2,7 @@
   "version": "2.0",
   "station": "Radio Contrabanda",
   "station_id": 1,
+  "language": "ca",
   "schedule_type": "weekly",
   "timezone": "Europe/Madrid",
   "last_updated": "2026-11-08",
