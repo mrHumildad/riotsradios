@@ -7,6 +7,7 @@ import { fetchCatalog, CATALOG_BASE_URL } from './lib/catalogFeed.js'
 import { parseAllowlist } from './lib/cleartext.js'
 import { buildStationReport, describeStation } from './lib/stationReport.js'
 
+import { isPlayableStation } from './lib/stations.js'
 export { isValidStreamUrl, parseStationRows, isPlayableStation } from './lib/stations.js'
 export { catalogSummary, assessCatalogCsv } from './lib/catalog.js'
 
