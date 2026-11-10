@@ -3,6 +3,15 @@
 Copy-paste "What's new" text, newest first. CHANGELOG.md is the technical log;
 this file is only what listeners read.
 
+## Unreleased — pending
+
+**en-US**
+
+```
+- New: 192 Radio Veronica, Tukker FM, Muziekknallers, Tiri 2, Tilos Rádió, Radio Seagull, SlaveFM, AccentFM, Echtepiraten.nl and Voice of Chongro
+- Every new channel streams over HTTPS, so it plays both in the app and on the website
+```
+
 ## v1.3.0 — 2026-11-09
 
 **en-US**
