@@ -1,5 +1,14 @@
 # riotsradios
 
+## 1.5.0
+
+### Minor Changes
+
+- Prompt listeners when a newer published release is detected, with a reload on the web and the Play Store listing on Android.
+- Switch stations with the next/previous buttons on wired or Bluetooth headphones in the Android app, even while it keeps playing in the background.
+- The EPG button in the station list now rotates through three views: the station rows, the two-hour guide lanes, and a merged feed of the newest posts from every station. Feed rows carry the station's icon, name, city and date.
+- Open a station's news log from its info modal: a NEWS button swaps the programme guide for the posts published on the station's feed.
+
 ## 1.4.0
 
 ### Minor Changes
