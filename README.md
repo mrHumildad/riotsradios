@@ -48,6 +48,16 @@ https://mrhumildad.github.io/riotsradios-epg/EPGs/manifest.json
 
 It loads each advertised guide from the same base URL. If the manifest or an individual guide cannot be loaded, that station falls back to its bundled `public/EPGs/<epg_file>` copy. Set `VITE_EPG_BASE_URL` to point at a staging EPG deployment without rebuilding the URLs by hand.
 
+## Update prompt
+
+Every build writes `version.json` next to the site (`{ "version": "1.4.0" }`,
+from `package.json`). On launch the player fetches the published copy and, when
+it is newer than the build it is running, shows an **UPDATE** strip above the
+footer: the web build offers **RELOAD**, the Android build opens the Play Store
+listing. **LATER** hides it until the next launch. An unreachable, malformed or
+older file shows nothing, and playback never waits for the check. Set
+`VITE_APP_VERSION_URL` to point the check at a staging publish.
+
 ## Stations
 
 Available stations include:

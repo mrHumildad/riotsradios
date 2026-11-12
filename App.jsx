@@ -6,6 +6,7 @@ import PlayerDashboard from './comp/PlayerDashboard.jsx'
 import StationList from './comp/StationList.jsx'
 import StationModal from './comp/StationModal.jsx'
 import StationEditModal from './comp/StationEditModal.jsx'
+import UpdateNotice from './comp/UpdateNotice.jsx'
 import { useFavorites } from './comp/useFavorites.js'
 import { stationTimeZone } from './lib/stationTime.js'
 import { isFreshTitle } from './lib/icy.js'
@@ -281,6 +282,8 @@ const {
       />
 
       </div>
+
+      <UpdateNotice />
 
       <div className="chassis-footer" aria-hidden="true">
         <span className="footer-sig footer-logo footer-version">v{version}</span>

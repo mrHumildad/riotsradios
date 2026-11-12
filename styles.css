@@ -2900,3 +2900,90 @@ input[type="range"]::-moz-range-track {
 
 .station-edit-icon-status.ok { color: var(--green-active); }
 .station-edit-icon-status.bad { color: var(--crimson); }
+
+/* =========================================================
+   UPDATE NOTICE — a newer published release is available
+   ========================================================= */
+
+.update-notice {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.4rem, 2vw, 0.9rem);
+  margin-top: 0.35rem;
+  padding: 0.32rem clamp(0.5rem, 2.4vw, 0.85rem);
+  background: linear-gradient(170deg, #1a1408 0%, #0d0b07 100%);
+  border: 1px solid var(--amber-dim);
+  border-left: 0.25rem solid var(--amber);
+  color: var(--amber);
+  font-family: var(--font-stencil);
+  text-transform: uppercase;
+  box-shadow:
+    0 0 12px var(--amber-glow-sm),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.update-notice-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.6rem;
+  min-width: 0;
+}
+
+.update-notice-key {
+  font-size: clamp(0.62rem, 1.6dvh, 0.76rem);
+  letter-spacing: 0.12em;
+  color: var(--amber-bright);
+  text-shadow: 0 0 6px var(--amber-glow);
+}
+
+.update-notice-versions {
+  font-size: clamp(0.52rem, 1.3dvh, 0.66rem);
+  letter-spacing: 0.08em;
+  color: var(--amber-label);
+  white-space: nowrap;
+}
+
+.update-notice-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.update-notice-btn {
+  font-family: var(--font-stencil);
+  font-size: clamp(0.52rem, 1.3dvh, 0.66rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  background: transparent;
+  color: var(--amber-label);
+  border: 1px solid var(--amber-dim);
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.update-notice-btn:hover {
+  color: var(--amber-bright);
+  border-color: var(--amber);
+}
+
+.update-notice-btn:focus-visible {
+  outline: 2px solid var(--amber-bright);
+  outline-offset: 2px;
+}
+
+.update-notice-btn--primary {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #0a0907;
+}
+
+.update-notice-btn--primary:hover {
+  background: var(--amber-bright);
+  border-color: var(--amber-bright);
+  color: #0a0907;
+}

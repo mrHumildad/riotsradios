@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { stationCatalogPlugin } from './scripts/catalog-plugin.mjs'
+import { appVersionPlugin } from './scripts/version-plugin.mjs'
 
 export default defineConfig({
-  plugins: [react(), stationCatalogPlugin()],
+  plugins: [react(), stationCatalogPlugin(), appVersionPlugin()],
   base: '/riotsradios/',
   /* Only `npm run build:android` sets APP_BUILD=1. The Android bundle may carry
      plain-HTTP stations (data/cleartext-hosts.json); the Pages bundle may not. */
