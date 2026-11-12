@@ -51,7 +51,7 @@ It loads each advertised guide from the same base URL. If the manifest or an ind
 
 ## Update prompt
 
-Every build writes `version.json` next to the site (`{ "version": "1.4.0" }`,
+Every build writes `version.json` next to the site (`{ "version": "2.0.0" }`,
 from `package.json`). On launch the player fetches the published copy and, when
 it is newer than the build it is running, shows an **UPDATE** strip above the
 footer: the web build offers **RELOAD**, the Android build opens the Play Store

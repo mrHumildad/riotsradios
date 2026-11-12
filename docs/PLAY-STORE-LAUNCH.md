@@ -23,7 +23,7 @@ the rest of the order does not change.
 | Upload key | `~/keystores/riotsradios-upload.jks`, alias `riots-upload`, RSA 4096, valid until 2054 |
 | Key passwords | `~/keystores/riotsradios-upload-credentials.txt` (back it up twice) |
 | Gradle credentials | `RIOTS_UPLOAD_*` in `~/.gradle/gradle.properties` (never in the repo) |
-| Signed artifacts | `android-builds/riotsradios-v1.2.0.aab` (7.1 MB) and `.apk` (7.4 MB) |
+| Signed artifacts | `android-builds/riotsradios-v2.0.0.aab` (7.2 MB) and `.apk` (7.5 MB) |
 | Privacy policy | live at `https://mrhumildad.github.io/riotsradios/privacy.html` |
 | Store icon | `store/icon-512.png` — 512×512, 32-bit PNG |
 | Feature graphic | `store/feature-graphic-1024x500.png` — 1024×500, RGB, no alpha |
@@ -71,18 +71,18 @@ wired up in this repo.
 ## 2. Build the uploadable bundle
 
 The artifact already sitting in `android-builds/` is current. Rebuild only if
-the source changed since `versionCode 1` was cut.
+the source changed since `versionCode 6` was cut.
 
 ```bash
 npm run validate:stations     # catalog gates; a bad row cannot ship
 npm test                      # unit tests
 
-# First upload: keep versionCode 1, nothing has been uploaded yet.
+# First upload: keep versionCode 6, nothing has been uploaded yet.
 node scripts/release-android.mjs --no-bump
 
 ls -la android-builds
-# android-builds/riotsradios-v1.2.0.aab
-# android-builds/riotsradios-v1.2.0.apk
+# android-builds/riotsradios-v2.0.0.aab
+# android-builds/riotsradios-v2.0.0.apk
 ```
 
 What the script does, in order: `android:sync` (cleartext config, spectrum
@@ -98,8 +98,8 @@ Expected values in the bundle:
 
 ```
 package name   com.mrhumildad.riotsradios
-versionCode    1
-versionName    1.2.0
+versionCode    6
+versionName    2.0.0
 minSdk         24
 targetSdk      36
 signer         CN=RIOTSRADIOS, OU=Upload
@@ -217,8 +217,8 @@ through too early and Play saves an **empty release**, which deactivates the
 previous bundle and leaves testers with nothing. Always:
 
 1. **Testing → Internal testing → App bundles → Upload.** Drop
-   `android-builds/riotsradios-v1.2.0.aab`. Stay on the page until the row
-   reads **Processed** and shows `versionCode 1`, minSdk 24, targetSdk 36.
+   `android-builds/riotsradios-v2.0.0.aab`. Stay on the page until the row
+   reads **Processed** and shows `versionCode 6`, minSdk 24, targetSdk 36.
 2. **Track → Create new release → Add app bundle →** pick the processed artifact
    from the library. It attaches instantly because it is already stored.
 3. **Check the green lights** before saving:
@@ -230,8 +230,8 @@ previous bundle and leaves testers with nothing. Always:
 5. **Testers** tab → add your testers list → copy the opt-in URL.
 6. Install **from Play**, on a device that has never had the app. Not adb.
 
-Release notes for this first upload — `RELEASE.md` does not exist yet, so write
-them inline; keep it to what a listener notices:
+Release notes for this first upload — copy the newest block from `RELEASE.md`; it
+is already written for what a listener notices:
 
 ```
 First Play release of RIOTSRADIOS: 40+ independent stations, now-playing guide,

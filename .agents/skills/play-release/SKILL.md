@@ -7,7 +7,7 @@ description: Build, version and publish RIOTSRADIOS on Google Play with Capacito
 
 **Where this app is today:** a web app (React 19 + Vite 8, `base: '/riotsradios/'`,
 deployed to GitHub Pages by `.github/workflows/deploy.yml`, versioned with
-changesets at `1.2.0`). Capacitor 8 and `android/` are in the repo: M0 (shell
+changesets at `2.0.0`). Capacitor 8 and `android/` are in the repo: M0 (shell
 APK) and M1 (Media3 playback, see
 [`docs/ANDROID-AUTO.md`](../../../docs/ANDROID-AUTO.md)) are done, `android:sync`
 and `android:build` exist, and **signing, `android:bundle`/`export` and

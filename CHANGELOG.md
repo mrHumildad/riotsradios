@@ -1,8 +1,8 @@
 # riotsradios
 
-## 1.5.0
+## 2.0.0
 
-### Minor Changes
+### Major Changes
 
 - Prompt listeners when a newer published release is detected, with a reload on the web and the Play Store listing on Android.
 - Switch stations with the next/previous buttons on wired or Bluetooth headphones in the Android app, even while it keeps playing in the background.

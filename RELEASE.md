@@ -3,7 +3,7 @@
 Copy-paste "What's new" text, newest first. CHANGELOG.md is the technical log;
 this file is only what listeners read.
 
-## v1.5.0 — 2026-11-12
+## v2.0.0 — 2026-11-12
 
 **en-US**
 
