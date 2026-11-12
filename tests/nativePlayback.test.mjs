@@ -12,7 +12,7 @@ const URL = 'https://stream.example/s.mp3'
 
 function fakeBridge() {
   const listeners = new Map()
-  const calls = { playStation: [], stop: 0, setVolume: [], removed: 0, requestNotifications: 0 }
+  const calls = { playStation: [], stop: 0, setVolume: [], setCatalog: [], removed: 0, requestNotifications: 0 }
   return {
     listeners,
     calls,
@@ -28,6 +28,10 @@ function fakeBridge() {
     },
     setVolume(payload) {
       calls.setVolume.push(payload)
+      return Promise.resolve()
+    },
+    setCatalog(payload) {
+      calls.setCatalog.push(payload)
       return Promise.resolve()
     },
     requestNotifications() {
@@ -54,13 +58,15 @@ function setup() {
   const states = []
   const errors = []
   const tracks = []
+  const adopted = []
   const controller = createNativePlaybackController({
     bridge,
     onState: (state) => states.push(state),
     onStreamError: (reason) => errors.push(reason),
     onTrack: (title, id) => tracks.push({ title, id }),
+    onStation: (id) => adopted.push(id),
   })
-  return { bridge, controller, states, errors, tracks }
+  return { bridge, controller, states, errors, tracks, adopted }
 }
 
 test('subscribes to the session state event', async () => {
@@ -258,6 +264,54 @@ test('a title already playing is adopted when the page attaches late', async () 
   await Promise.resolve()
 
   assert.deepEqual(tracks, [{ title: 'Nirvana - Jesus Don', id: '121' }])
+})
+
+test('a station chosen natively is adopted without replaying it', () => {
+  const { bridge, adopted, states } = setup()
+
+  bridge.emit(STATE_EVENT, { state: 'playing', id: '71' })
+
+  assert.deepEqual(adopted, ['71'])
+  assert.deepEqual(states, ['playing'])
+})
+
+test('the station the page is already on is not adopted twice', () => {
+  const { bridge, controller, adopted } = setup()
+
+  controller.play(URL, { station: STATION })
+  bridge.emit(STATE_EVENT, { state: 'playing', id: '12' })
+
+  assert.deepEqual(adopted, [])
+})
+
+test('a stale snapshot cannot pull the page back to the station it just left', () => {
+  const { bridge, controller, adopted } = setup()
+
+  controller.play(URL, { station: STATION })
+  controller.play(URL, { station: { ...STATION, id: 71, name: 'Zoy Milton' } })
+  /* A frame from the old item can still arrive while the new one loads. */
+  bridge.emit(STATE_EVENT, { state: 'playing', id: '12' })
+
+  assert.deepEqual(adopted, [])
+})
+
+test('setCatalog hands the station order to the native side', () => {
+  const { bridge, controller } = setup()
+
+  controller.setCatalog([
+    { ...STATION, url: URL },
+    { id: 71, name: 'Zoy Milton', url: 'https://stream.example/z.mp3', favicon: 'https://x/z.png' },
+    { id: null, name: 'No id', url: 'https://stream.example/n.mp3' },
+  ])
+
+  assert.deepEqual(bridge.calls.setCatalog, [
+    {
+      stations: [
+        { id: '12', name: 'Radio Topo', location: 'Zaragoza, Spain', url: URL, artworkUrl: 'https://x/y.png' },
+        { id: '71', name: 'Zoy Milton', location: '', url: 'https://stream.example/z.mp3', artworkUrl: 'https://x/z.png' },
+      ],
+    },
+  ])
 })
 
 test('destroy() detaches the listener and stops the session', async () => {

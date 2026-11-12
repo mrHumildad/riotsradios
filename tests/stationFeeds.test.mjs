@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   feedUrl,
   loadLatestPosts,
+  loadStationPosts,
   manifestEntries,
 } from '../lib/stationFeeds.js'
 
@@ -76,4 +77,52 @@ test('loadLatestPosts merges stations, orders by date, dedupes and limits', asyn
   )
   assert.equal(posts[0].station_name, 'One')
   assert.equal(posts[2].date_published, null)
+})
+
+test('loadStationPosts returns only that station, newest first', async () => {
+  const fetchImpl = async (url) => {
+    if (url.endsWith('/feeds/manifest.json')) {
+      return jsonResponse({
+        stations: {
+          1: { file: 'one.json', status: 'ok', name: 'One' },
+          2: { file: null, status: 'no_feed', name: 'Two' },
+        },
+      })
+    }
+    if (url.endsWith('/feeds/one.json')) {
+      return jsonResponse({
+        items: [
+          { id: 'old', url: 'https://example.org/old', title: 'Old', date_published: '2026-11-01T09:00:00Z' },
+          { id: 'new', url: 'https://example.org/new', title: 'New', date_published: '2026-11-10T09:00:00Z', summary: 'Excerpt' },
+          { id: 'dup', url: 'https://example.org/new', title: 'Duplicate' },
+          { id: 'no-url', title: 'No url' },
+        ],
+      })
+    }
+    return { ok: false, status: 404, json: async () => null }
+  }
+
+  const posts = await loadStationPosts(1, { baseUrl: 'https://epg.example', fetchImpl })
+  assert.deepEqual(
+    posts.map((post) => post.title),
+    ['New', 'Old'],
+  )
+  assert.equal(posts[0].summary, 'Excerpt')
+  assert.equal(posts[0].station_id, 1)
+  assert.equal(posts[0].station_name, 'One')
+
+  const none = await loadStationPosts(2, { baseUrl: 'https://epg.example', fetchImpl })
+  assert.deepEqual(none, [])
+})
+
+test('loadStationPosts rejects when the feed itself fails', async () => {
+  const fetchImpl = async (url) =>
+    url.endsWith('/feeds/manifest.json')
+      ? jsonResponse({ stations: { 1: { file: 'one.json', status: 'ok', name: 'One' } } })
+      : { ok: false, status: 500, json: async () => null }
+
+  await assert.rejects(
+    loadStationPosts(1, { baseUrl: 'https://epg.example', fetchImpl }),
+    /HTTP 500/,
+  )
 })

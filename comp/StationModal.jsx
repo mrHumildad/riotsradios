@@ -1,11 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import MarqueeText from './MarqueeText'
+import { loadStationPosts } from '../lib/stationFeeds.js'
+
+/* A published post's date, short enough for the log row; a post without a
+   readable date simply shows none. */
+function postDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+}
 
 /* The station modal: the homepage link on top, then what is on air from the
-   station's guide. One info button per row opens it, and that button exists for
+   station's guide. The NEWS button swaps the guide for the station's own log of
+   published posts. One info button per row opens it, and that button exists for
    every station, so a station without an EPG still gets header and website. */
 function StationModal({ station, epg, getDaySchedule, onClose, isFavorite, onToggleFavorite }) {
   const [dayOffset, setDayOffset] = useState(0)
+  const [view, setView] = useState('epg')
+  const [news, setNews] = useState({ status: 'idle', posts: [] })
   const scheduleRef = useRef(null)
 
   const categories = epg?.metadata?.categories || {}
@@ -18,6 +31,23 @@ function StationModal({ station, epg, getDaySchedule, onClose, isFavorite, onTog
   const canGoPrev = epg ? getDaySchedule(station.id, dayOffset - 1) !== null : false
   const canGoNext = epg ? getDaySchedule(station.id, dayOffset + 1) !== null : false
 
+  /* The log is fetched when the button is first used, not with the guide, so a
+     station that is only opened for its schedule costs no feed request. */
+  useEffect(() => {
+    if (view !== 'news') return
+    let disposed = false
+    setNews({ status: 'loading', posts: [] })
+    loadStationPosts(station.id)
+      .then((posts) => {
+        if (disposed) return
+        setNews({ status: posts.length > 0 ? 'ready' : 'empty', posts })
+      })
+      .catch(() => {
+        if (!disposed) setNews({ status: 'error', posts: [] })
+      })
+    return () => { disposed = true }
+  }, [view, station.id])
+
   useEffect(() => {
     const isLeft  = e => ['ArrowLeft','Left'].includes(e.key) || e.keyCode === 37;
     const isRight = e => ['ArrowRight','Right'].includes(e.key) || e.keyCode === 39;
@@ -27,14 +57,14 @@ function StationModal({ station, epg, getDaySchedule, onClose, isFavorite, onTog
     const h = (e) => {
       if (e.isComposing) return;
       if (isEsc(e)) { onClose(); e.preventDefault(); return; }
-      if (isLeft(e) && canGoPrev) { goPrevDay(); e.preventDefault(); return; }
-      if (isRight(e) && canGoNext) { goNextDay(); e.preventDefault(); return; }
+      if (view === 'epg' && isLeft(e) && canGoPrev) { goPrevDay(); e.preventDefault(); return; }
+      if (view === 'epg' && isRight(e) && canGoNext) { goNextDay(); e.preventDefault(); return; }
       if (isUp(e)) { scheduleRef.current?.scrollBy({top: -120, behavior: 'smooth'}); e.preventDefault(); return; }
       if (isDown(e)) { scheduleRef.current?.scrollBy({top: 120, behavior: 'smooth'}); e.preventDefault(); return; }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [onClose, canGoPrev, canGoNext, goPrevDay, goNextDay]);
+  }, [onClose, view, canGoPrev, canGoNext, goPrevDay, goNextDay]);
 
   return (
     <div className="station-modal-overlay" onClick={onClose}>
@@ -53,6 +83,16 @@ function StationModal({ station, epg, getDaySchedule, onClose, isFavorite, onTog
             <span className="station-modal-name">{station.name}</span>
           </div>
           <div className="station-modal-actions">
+            <button
+              type="button"
+              className={`station-modal-news${view === 'news' ? ' is-active' : ''}`}
+              onClick={() => setView(v => (v === 'news' ? 'epg' : 'news'))}
+              aria-pressed={view === 'news'}
+              aria-label={view === 'news' ? 'Show programme guide' : 'Show news log'}
+              title={view === 'news' ? 'Programme guide' : 'News log'}
+            >
+              NEWS
+            </button>
             <button
               type="button"
               className={`station-modal-fav${isFavorite ? ' is-fav' : ''}`}
@@ -89,7 +129,35 @@ function StationModal({ station, epg, getDaySchedule, onClose, isFavorite, onTog
           </div>
         </div>
 
-        {epg ? (
+        {view === 'news' ? (
+          <div className="station-news">
+            {news.status === 'loading' && (
+              <div className="epg-no-data">Loading news…</div>
+            )}
+            {news.status === 'error' && (
+              <div className="epg-no-data">News log unavailable</div>
+            )}
+            {news.status === 'empty' && (
+              <div className="epg-no-data">No news log for this station</div>
+            )}
+            {news.posts.map((post) => (
+              <a
+                key={post.id || post.url}
+                className="station-news-post"
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+              >
+                {postDate(post.date_published) && (
+                  <div className="station-news-date">{postDate(post.date_published)}</div>
+                )}
+                <div className="station-news-title">{post.title}</div>
+                {post.summary && <div className="station-news-summary">{post.summary}</div>}
+              </a>
+            ))}
+          </div>
+        ) : epg ? (
           <>
             <div className="station-modal-day-nav">
               <button className="epg-day-btn" onClick={goPrevDay} disabled={!canGoPrev} aria-label="Previous day">◀</button>

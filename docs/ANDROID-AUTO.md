@@ -294,11 +294,11 @@ Capacitor plugin surface (small on purpose — the phone never sends URLs):
 ```
 RiotsPlayback.playStation({ id })      → resolves the URL from assets/catalog.json
 RiotsPlayback.stop()
-RiotsPlayback.next() / previous()
-RiotsPlayback.setStateListener()       → { state, mediaId, title, subtitle }
+RiotsPlayback.setStateListener()       → { state, error, id }, `id` = station on air
 RiotsPlayback.getState()               → same object
 RiotsPlayback.addListener('track')     → { id, title }, on each new ICY title
 RiotsPlayback.getTrack()               → same object, for a page that attaches late
+RiotsPlayback.setCatalog({ stations })  → station order for headset skips with no WebView
 ```
 
 ## 11. Manifest and Gradle checklist

@@ -2,6 +2,38 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import StationItem from './StationItem'
 import { orderStations } from '../lib/stationOrder.js'
 import { catalogLanguages, languageName, stationLanguage } from '../lib/stationLanguage.js'
+import { loadLatestPosts } from '../lib/stationFeeds.js'
+import { stationPlace } from '../lib/stations.js'
+import fallbackIcon from '/logob_transp_ffc107.png'
+
+/* Short date for a feed row; a post without a readable date shows none. */
+function postDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/* The feed's station mark: the station row's own icon, same classes and size. */
+function FeedIcon({ src, label }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [src])
+  const usable = Boolean(src) && !failed
+  return (
+    <img
+      src={usable ? src : fallbackIcon}
+      alt=""
+      title={label || ''}
+      width="48"
+      height="48"
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      className={`station-icon${usable ? '' : ' is-default'}`}
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, playbackState, onSelectStation, currentShows, trackTitles, onOpenStation, onEditStation, onAddStation, epgByStation }) {
   const listRef = useRef(null)
@@ -17,12 +49,34 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
   }, [stations, epgByStation])
   const [languageStep, setLanguageStep] = useState(0)
 
-  /* EPG mode swaps each guide station's row for a two-hour programme lane.
-     The lane is anchored on the wall clock, so it advances on its own timer
-     even when no stream title changes. */
-  const [epgMode, setEpgMode] = useState(false)
+  /* The EPG button rotates the list through three views: the station rows, the
+     two-hour guide lanes, and the merged station feed. The lane is anchored on
+     the wall clock, so it advances on its own timer even when no stream title
+     changes. */
+  const [view, setView] = useState('list')
   const hasGuides = Boolean(epgByStation?.size)
+  const epgMode = view === 'epg'
+  const readerMode = view === 'news'
+  const cycleView = () => {
+    /* A catalog with no guide skips the lane step rather than showing a view
+       that looks exactly like the station rows. */
+    const cycle = hasGuides ? ['list', 'epg', 'news'] : ['list', 'news']
+    setView((current) => cycle[(cycle.indexOf(current) + 1) % cycle.length])
+  }
   const [epgNow, setEpgNow] = useState(() => new Date())
+
+  /* Reader mode: the newest posts from every station feed, capped at 100. It is
+     loaded only while the feed is on screen and follows the LANG filter. A
+     loaded feed is kept for the session, so toggling reader mode back on shows
+     the same posts instead of downloading every station feed again; a failed
+     load is not kept, so re-entering retries it. */
+  const [feed, setFeed] = useState({ status: 'idle', posts: [] })
+  const feedCacheRef = useRef(null)
+  const stationById = useMemo(() => {
+    const map = new Map()
+    for (const station of stations) map.set(String(station.id), station)
+    return map
+  }, [stations])
   const stepCount = languages.length + 1
   const languageIndex = languageStep % stepCount
   const activeLanguage = languageIndex > 0 ? languages[languageIndex - 1] : ''
@@ -45,6 +99,43 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
     const id = setInterval(() => setEpgNow(new Date()), 60000)
     return () => clearInterval(id)
   }, [epgMode])
+
+  useEffect(() => {
+    if (!readerMode) return undefined
+    if (feedCacheRef.current) {
+      setFeed(feedCacheRef.current)
+      return undefined
+    }
+    let disposed = false
+    setFeed({ status: 'loading', posts: [] })
+    loadLatestPosts({ limit: 100 })
+      .then((posts) => {
+        const next = { status: posts.length > 0 ? 'ready' : 'empty', posts }
+        /* Keep the result even if reader mode was closed mid-load, so the next
+           visit starts from it rather than a second round of feed requests. */
+        feedCacheRef.current = next
+        if (!disposed) setFeed(next)
+      })
+      .catch(() => {
+        if (!disposed) setFeed({ status: 'error', posts: [] })
+      })
+    return () => { disposed = true }
+  }, [readerMode])
+
+  /* A post's station decides its language, so LANG filters the feed the same
+     way it filters the rows. */
+  const feedPosts = useMemo(() => {
+    if (!languageFiltered) return feed.posts
+    return feed.posts.filter((post) => {
+      const station = stationById.get(String(post.station_id))
+      if (!station) return false
+      return stationLanguage(station, epgByStation?.get?.(station.id)) === activeLanguage
+    })
+  }, [feed.posts, languageFiltered, activeLanguage, stationById, epgByStation])
+
+  useEffect(() => {
+    if (readerMode) listRef.current?.scrollTo({ top: 0 })
+  }, [readerMode])
 
   /* Guide stations rise to the top; the rest keep their order at the bottom
      and render exactly as they do with the lane off. */
@@ -98,16 +189,23 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
         </button>
         <button
           type="button"
-          className={`station-filter-btn${epgMode ? ' is-on' : ''}`}
-          onClick={() => setEpgMode(on => !on)}
-          disabled={!hasGuides}
-          aria-pressed={epgMode}
-          aria-label={epgMode ? 'EPG lanes on. Click to show the station rows.' : 'EPG lanes off. Click to show the two-hour guide.'}
-          title={hasGuides
-            ? (epgMode ? 'Showing two-hour guide lanes — click to hide them' : 'Show a two-hour guide lane on stations with an EPG')
-            : 'No station in the catalog has a guide yet'}
+          className={`station-filter-btn${view !== 'list' ? ' is-on' : ''}`}
+          onClick={cycleView}
+          aria-pressed={view !== 'list'}
+          aria-label={readerMode
+            ? 'Showing the station news feed. Click for the station rows.'
+            : epgMode
+              ? 'Showing guide lanes. Click for the station news feed.'
+              : `Showing station rows. Click for ${hasGuides ? 'guide lanes' : 'the station news feed'}.`}
+          title={readerMode
+            ? 'Showing the station news feed — click to return to the station rows'
+            : epgMode
+              ? 'Showing two-hour guide lanes — click for the station news feed'
+              : hasGuides
+                ? 'Showing station rows — click to show the two-hour guide lanes'
+                : 'Showing station rows — click for the station news feed'}
         >
-          EPG
+          {readerMode ? 'FEED' : 'EPG'}
         </button>
         {import.meta.env.DEV && onAddStation && (
           <button
@@ -121,8 +219,54 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
           </button>
         )}
       </div>
-      <div className="station-list-inner" ref={listRef}>
-        {displayed.map(({ station, index }) => (
+      <div className={`station-list-inner${readerMode ? ' station-news' : ''}`} ref={listRef}>
+        {readerMode ? (
+          <>
+            {feed.status === 'loading' && (
+              <div className="epg-no-data">Loading news…</div>
+            )}
+            {feed.status === 'error' && (
+              <div className="epg-no-data">News feed unavailable</div>
+            )}
+            {feed.status === 'empty' && (
+              <div className="epg-no-data">No news yet</div>
+            )}
+            {feed.status === 'ready' && feedPosts.length === 0 && (
+              <div className="epg-no-data">No news in this language</div>
+            )}
+            {feedPosts.map((post) => {
+              const date = postDate(post.date_published)
+              const station = stationById.get(String(post.station_id))
+              const stationName = post.station_name || station?.name || ''
+              const city = station ? stationPlace(station) : ''
+              return (
+                <a
+                  key={post.id || post.url}
+                  className="station-news-post station-news-post-icon"
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FeedIcon
+                    src={station?.favicon || ''}
+                    label={stationName}
+                  />
+                  <span className="station-news-body">
+                    {(stationName || city || date) && (
+                      <div className="station-news-meta">
+                        {stationName && <span className="station-news-station">{stationName}</span>}
+                        {city && <span className="station-news-city">{city}</span>}
+                        {date && <span className="station-news-date">{date}</span>}
+                      </div>
+                    )}
+                    <div className="station-news-title">{post.title}</div>
+                    {post.summary && <div className="station-news-summary">{post.summary}</div>}
+                  </span>
+                </a>
+              )
+            })}
+          </>
+        ) : displayed.map(({ station, index }) => (
         <StationItem
           key={station.id ?? index}
           station={station}

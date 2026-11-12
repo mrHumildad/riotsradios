@@ -21,6 +21,7 @@ import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionResult
 import com.mrhumildad.riotsradios.spectrum.SpectrumBus
 import com.mrhumildad.riotsradios.spectrum.SpectrumTap
 
@@ -82,6 +83,30 @@ class RiotMediaService : MediaLibraryService() {
             }
         },
     )
+
+    /**
+     * Headset and Bluetooth next/previous buttons arrive as player commands.
+     * There is no queue to seek through, so the command moves the session to
+     * the neighbouring station in the catalog the page cached — whether the
+     * WebView is still attached or not.
+     */
+    private val libraryCallback = object : MediaLibrarySession.Callback {
+        override fun onPlayerCommandRequest(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            playerCommand: Int,
+        ): Int {
+            val step = when (playerCommand) {
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> 1
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> -1
+                else -> 0
+            }
+            if (step != 0 && skipStation(step)) return SessionResult.RESULT_SUCCESS
+            return super.onPlayerCommandRequest(session, controller, playerCommand)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -216,7 +241,7 @@ class RiotMediaService : MediaLibraryService() {
             }
         })
 
-        session = MediaLibrarySession.Builder(this, player, LIBRARY_CALLBACK).build()
+        session = MediaLibrarySession.Builder(this, player, libraryCallback).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =
@@ -262,9 +287,10 @@ class RiotMediaService : MediaLibraryService() {
 
     /** Maps ExoPlayer to the state names `lib/playbackController.js` already uses. */
     private fun publishState() {
+        val mediaId = if (::player.isInitialized) player.currentMediaItem?.mediaId else null
         val forced = terminalError
         if (forced != null) {
-            PlaybackBus.publish("error", forced)
+            PlaybackBus.publish("error", forced, mediaId)
             TrackBus.clear()
             clearSpectrum()
             return
@@ -285,7 +311,7 @@ class RiotMediaService : MediaLibraryService() {
             player.playbackState == Player.STATE_IDLE -> if (player.playWhenReady) "loading" else "idle"
             else -> "idle"
         }
-        PlaybackBus.publish(state, if (state == "error") error?.let(::streamErrorFor) else null)
+        PlaybackBus.publish(state, if (state == "error") error?.let(::streamErrorFor) else null, mediaId)
         /* A stopped or failed player must not leave the last frame frozen, nor
            the last song on the row. */
         if (state == "idle" || state == "error") {
@@ -294,6 +320,22 @@ class RiotMediaService : MediaLibraryService() {
         } else {
             spectrumMuted = false
         }
+    }
+
+    /**
+     * Moves to the next/previous station in the cached catalog. The player and
+     * the media notification do the work; a page that is still attached learns
+     * the new station from the published state (and never asks the player for
+     * it again). No cached catalog yet — the page has not connected — leaves
+     * the command to Media3, whose seek is a no-op on a single item.
+     */
+    private fun skipStation(step: Int): Boolean {
+        val current = StationCatalog.stationId(player.currentMediaItem?.mediaId)
+        val station = StationCatalog.neighbour(this, current, step) ?: return false
+        player.setMediaItem(station.mediaItem())
+        player.prepare()
+        player.play()
+        return true
     }
 
     private fun clearSpectrum() {
@@ -316,8 +358,5 @@ class RiotMediaService : MediaLibraryService() {
             .setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
-
-        /* M2 replaces this with the catalog-backed browse tree. */
-        val LIBRARY_CALLBACK = object : MediaLibrarySession.Callback {}
     }
 }

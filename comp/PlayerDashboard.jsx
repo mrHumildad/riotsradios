@@ -77,22 +77,35 @@ function PlayerDashboard({
     }
   }, [timeZone, clock, countryCode])
 
-  const [showEpgName, setShowEpgName] = useState(false)
+  /* One display line, cycling in place: the station name, the programme on air,
+     then the stream's own track. The track needs no row of its own. */
+  const displayTexts = useMemo(() => {
+    if (stationHasError && streamError === 'mixed-content') return ['STREAM ERROR (HTTPS)']
+    if (stationHasError && streamError === 'playback') return ['PLAYBACK ERROR']
+    if (hasError) return [currentStationName]
+    const texts = [currentStationName]
+    if (currentShow) texts.push(`${currentShow.live ? '● ' : '▷ '}${currentShow.title}`)
+    if (currentTrack) texts.push(`♪ ${currentTrack}`)
+    return texts
+  }, [stationHasError, streamError, hasError, currentStationName, currentShow, currentTrack])
 
+  const [displayStep, setDisplayStep] = useState(0)
+  const displayCount = displayTexts.length
+
+  /* Restart only when the set of texts changes, so an ICY update does not cut
+     the cycle short. */
   useEffect(() => {
-    if (!currentShow) { setShowEpgName(false); return }
-    setShowEpgName(true)
-    const id = setInterval(() => setShowEpgName(v => !v), 3500)
+    setDisplayStep(0)
+    if (displayCount < 2) return undefined
+    const id = setInterval(() => setDisplayStep(step => step + 1), 3500)
     return () => clearInterval(id)
-  }, [currentShow])
+  }, [displayCount, currentStationIndex])
 
-  const crtText = currentShow && showEpgName && !stationHasError
-    ? (currentShow.live ? '● ' : '▷ ') + currentShow.title
-    : stationHasError && streamError === 'mixed-content'
-    ? 'STREAM ERROR (HTTPS)'
-    : stationHasError && streamError === 'playback'
-    ? 'PLAYBACK ERROR'
-    : currentStationName
+  const displayIndex = displayStep % displayCount
+  const crtText = displayTexts[displayIndex]
+  const crtTitle = !hasError && currentTrack && displayIndex === displayCount - 1
+    ? `Now playing: ${currentTrack}`
+    : undefined
 
   const displayClass = streamError ? 'display-text stream-error' : 'display-text'
 
@@ -101,16 +114,8 @@ function PlayerDashboard({
 
 
       <div className="crt-display" aria-label="Current station">
-        <MarqueeText id="current-station" className={displayClass} text={crtText} />
+        <MarqueeText id="current-station" className={displayClass} text={crtText} title={crtTitle} />
       </div>
-
-      {currentTrack && !hasError && (
-        <MarqueeText
-          className="crt-track"
-          text={`♪ ${currentTrack}`}
-          title={`Now playing: ${currentTrack}`}
-        />
-      )}
 
 
       <div

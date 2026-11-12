@@ -2,11 +2,8 @@ package com.mrhumildad.riotsradios.spectrum
 
 import android.Manifest
 import android.content.ComponentName
-import android.net.Uri
 import android.os.Build
 import androidx.core.content.ContextCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.getcapacitor.JSArray
@@ -21,13 +18,11 @@ import com.getcapacitor.annotation.PermissionCallback
 import com.google.common.util.concurrent.ListenableFuture
 import com.mrhumildad.riotsradios.playback.PlaybackBus
 import com.mrhumildad.riotsradios.playback.RiotMediaService
+import com.mrhumildad.riotsradios.playback.StationCatalog
 import com.mrhumildad.riotsradios.playback.TrackBus
 
 /* File-level so the @CapacitorPlugin annotation can reference it. */
 private const val ALIAS_NOTIFICATIONS = "notifications"
-
-/* Prefix of the item's mediaId; the page keys its stations by the bare id. */
-private const val MEDIA_ID_PREFIX = "station:"
 
 /**
  * Capacitor bridge between the WebView and the native Media3 session.
@@ -61,8 +56,7 @@ class RiotsPlaybackPlugin : Plugin() {
 
     private val stateListener: (PlaybackBus.Snapshot) -> Unit = { snapshot ->
         if (hasListeners(EVENT_STATE)) {
-            val payload = JSObject().put("state", snapshot.state)
-            snapshot.error?.let { payload.put("error", it) }
+            val payload = snapshotPayload(snapshot)
             activity?.runOnUiThread { notifyListeners(EVENT_STATE, payload) }
         }
     }
@@ -121,30 +115,50 @@ class RiotsPlaybackPlugin : Plugin() {
             return
         }
 
-        val metadata = MediaMetadata.Builder()
-            .setTitle(call.getString("name") ?: "")
-            .setArtist(call.getString("location") ?: "")
-            .setAlbumTitle(ALBUM)
-            .setIsBrowsable(false)
-            .setIsPlayable(true)
-            .apply {
-                call.getString("artworkUrl")
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { artwork -> runCatching { Uri.parse(artwork) }.getOrNull()?.let(::setArtworkUri) }
-            }
-            .build()
-
-        val item = MediaItem.Builder()
-            .setMediaId("station:$id")
-            .setUri(url)
-            .setMediaMetadata(metadata)
-            .build()
+        val item = StationCatalog.Station(
+            id = id,
+            name = call.getString("name") ?: "",
+            location = call.getString("location") ?: "",
+            url = url,
+            artworkUrl = call.getString("artworkUrl"),
+        ).mediaItem()
 
         withController(call) { native ->
             native.setMediaItem(item)
             native.prepare()
             native.play()
         }
+    }
+
+    /**
+     * Caches the station order for headset next/previous, which the service
+     * must be able to walk with no WebView alive (`StationCatalog`).
+     */
+    @PluginMethod
+    fun setCatalog(call: PluginCall) {
+        val rows = call.getArray("stations")
+        if (rows == null) {
+            call.reject("stations is required")
+            return
+        }
+        val stations = ArrayList<StationCatalog.Station>(rows.length())
+        for (index in 0 until rows.length()) {
+            val row = rows.optJSONObject(index) ?: continue
+            val id = row.optString("id")
+            val url = row.optString("url")
+            if (id.isBlank() || url.isBlank()) continue
+            stations.add(
+                StationCatalog.Station(
+                    id = id,
+                    name = row.optString("name"),
+                    location = row.optString("location"),
+                    url = url,
+                    artworkUrl = row.optString("artworkUrl").takeIf { it.isNotBlank() },
+                )
+            )
+        }
+        StationCatalog.replace(context, stations)
+        call.resolve()
     }
 
     @PluginMethod
@@ -273,16 +287,18 @@ class RiotsPlaybackPlugin : Plugin() {
         stateListener(PlaybackBus.snapshot)
     }
 
-    private fun snapshotPayload(): JSObject {
-        val snapshot = PlaybackBus.snapshot
+    /** `id` is the bare station id on air, which lets a page that attaches
+     *  late adopt a station the service chose on its own. */
+    private fun snapshotPayload(snapshot: PlaybackBus.Snapshot = PlaybackBus.snapshot): JSObject {
         val payload = JSObject().put("state", snapshot.state)
         snapshot.error?.let { payload.put("error", it) }
+        StationCatalog.stationId(snapshot.mediaId)?.let { payload.put("id", it) }
         return payload
     }
 
     private fun trackPayload(track: TrackBus.Track?): JSObject {
         val payload = JSObject().put("title", track?.title ?: "")
-        track?.mediaId?.removePrefix(MEDIA_ID_PREFIX)?.let { payload.put("id", it) }
+        StationCatalog.stationId(track?.mediaId)?.let { payload.put("id", it) }
         return payload
     }
 
@@ -293,7 +309,6 @@ class RiotsPlaybackPlugin : Plugin() {
     }
 
     private companion object {
-        const val ALBUM = "RIOTSRADIOS"
         const val EVENT_SPECTRUM = "spectrum"
         const val EVENT_STATE = "state"
         const val EVENT_TRACK = "track"

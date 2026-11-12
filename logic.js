@@ -14,12 +14,10 @@ import { getCurrentShow as computeCurrentShow, getDaySchedule as computeDaySched
 import { loadEpgData } from './lib/epgFeed.js'
 import { readIcyTitle } from './lib/icy.js'
 
-/* ICY titles cost one connection per station, so they are polled in small
-   batches. The selected station refreshes fastest; a station that refuses the
-   Icy-MetaData preflight a couple of times is left alone until reload. */
-const TRACK_REFRESH_MS = 90_000
-const TRACK_REFRESH_ACTIVE_MS = 30_000
-const TRACK_BATCH = 3
+/* ICY titles cost one connection per stream, so only the station on air is
+   read. A station that refuses the Icy-MetaData preflight a couple of times is
+   left alone until the page is reloaded. */
+const TRACK_REFRESH_MS = 30_000
 const TRACK_GIVE_UP_AFTER = 2
 
 /* Inside the Capacitor app the page origin is the local server (http://localhost),
@@ -98,6 +96,18 @@ export function useRadioLogic() {
     return controllerRef.current
   }, [])
 
+  /* The service can change station on its own (headset buttons, the media
+     notification), including while this page was away. Its station is adopted
+     rather than replayed, so the list and the guide follow what is on air. */
+  const adoptStation = useCallback((id) => {
+    const index = stations.findIndex((station) => String(station.id) === String(id))
+    if (index < 0 || index === currentIndexRef.current) return
+    const prevEl = document.getElementById(`station-${currentIndexRef.current}`)
+    if (prevEl) prevEl.classList.remove('playing')
+    currentIndexRef.current = index
+    setCurrentStationIndex(index)
+  }, [])
+
   useEffect(() => {
     const id = setInterval(() => setTimeTick(t => t + 1), 60000)
     return () => clearInterval(id)
@@ -120,6 +130,8 @@ export function useRadioLogic() {
         controller = createNativePlaybackController({
           onState: applyState,
           onStreamError: setStreamError,
+          /* A station the service chose itself: mirror it, never replay it. */
+          onStation: adoptStation,
           /* Every station reaches its title here, CORS or not, because the
              player owns the socket. `id` is the station the player tagged. */
           onTrack: (title, id) => {
@@ -136,6 +148,9 @@ export function useRadioLogic() {
             })
           },
         })
+        /* The service walks this order for headset next/previous, including
+           after this WebView is gone, so hand it over as soon as it exists. */
+        controller.setCatalog?.(stations)
         spectrumSourceRef.current = 'native'
         spectrumRef.current?.close()
         spectrumRef.current = createNativeSpectrum()
@@ -172,7 +187,13 @@ export function useRadioLogic() {
       nativeTrackIdRef.current = null
       audioRef.current = null
     }
-  }, [applyState])
+  }, [applyState, adoptStation])
+
+  /* A synced catalog can reorder the list, so the native side that walks it
+     gets the new order too. */
+  useEffect(() => {
+    controllerRef.current?.setCatalog?.(stations)
+  }, [catalogVersion])
 
   /* When connectivity returns, retry a stream that gave up. */
   useEffect(() => {
@@ -218,8 +239,11 @@ export function useRadioLogic() {
     return () => { disposed = true }
   }, [catalogVersion])
 
-  /* ICY titles for the stations whose server allows the Icy-MetaData preflight.
-     Nothing is invented: a station that cannot be read simply has no entry. */
+  /* ICY titles for the station on air, and only that one: reading a stream's
+     metadata costs a connection to its server, and most servers refuse the
+     Icy-MetaData preflight, so probing the whole catalog only fills the console
+     with CORS errors. Nothing is invented: a station that cannot be read
+     simply has no entry. */
   useEffect(() => {
     let disposed = false
     const titles = new Map()    /* id -> { title, at } */
@@ -229,14 +253,6 @@ export function useRadioLogic() {
     const publish = () => {
       if (!disposed) setNowPlaying(new Map(titles))
     }
-    const activeId = () => stations[currentIndexRef.current]?.id
-    const eligible = stations.filter(
-      (station) => typeof station.url === 'string' && station.url.startsWith('https://')
-    )
-    const due = (station) => {
-      const ttl = station.id === activeId() ? TRACK_REFRESH_ACTIVE_MS : TRACK_REFRESH_MS
-      return Date.now() - (attempts.get(station.id) || 0) >= ttl
-    }
 
     const pump = async () => {
       while (!disposed) {
@@ -245,36 +261,30 @@ export function useRadioLogic() {
           await sleep(5000)
           continue
         }
-        const pending = eligible
-          .filter((station) =>
-            (failures.get(station.id) || 0) < TRACK_GIVE_UP_AFTER &&
-            station.id !== nativeTrackIdRef.current &&
-            due(station)
-          )
-          .sort((a, b) => (a.id === activeId() ? -1 : b.id === activeId() ? 1 : 0))
-        if (pending.length === 0) {
+        const station = stations[currentIndexRef.current]
+        const id = station?.id
+        const readable =
+          typeof station?.url === 'string' &&
+          station.url.startsWith('https://') &&
+          Number.isInteger(id) &&
+          id !== nativeTrackIdRef.current &&
+          (failures.get(id) || 0) < TRACK_GIVE_UP_AFTER &&
+          Date.now() - (attempts.get(id) || 0) >= TRACK_REFRESH_MS
+        if (!readable) {
           await sleep(1500)
           continue
         }
-        await Promise.all(
-          pending.slice(0, TRACK_BATCH).map(async (station) => {
-            attempts.set(station.id, Date.now())
-            const title = await readIcyTitle(station.url)
-            if (disposed) return
-            if (title) {
-              failures.delete(station.id)
-              const previous = titles.get(station.id)
-              if (previous?.title !== title) {
-                titles.set(station.id, { title, at: Date.now() })
-                publish()
-              } else {
-                titles.set(station.id, { title, at: Date.now() })
-              }
-            } else {
-              failures.set(station.id, (failures.get(station.id) || 0) + 1)
-            }
-          })
-        )
+        attempts.set(id, Date.now())
+        const title = await readIcyTitle(station.url)
+        if (disposed) return
+        if (title) {
+          failures.delete(id)
+          const previous = titles.get(id)
+          titles.set(id, { title, at: Date.now() })
+          if (previous?.title !== title) publish()
+        } else {
+          failures.set(id, (failures.get(id) || 0) + 1)
+        }
         await sleep(250)
       }
     }
@@ -283,7 +293,7 @@ export function useRadioLogic() {
     return () => {
       disposed = true
     }
-    /* A synced catalog brings stations this pump has never seen. */
+    /* A synced catalog replaces the rows, so the pump re-reads the list. */
   }, [catalogVersion])
 
   const currentShows = useMemo(() => {
@@ -352,19 +362,17 @@ export function useRadioLogic() {
     else if (audioRef.current) audioRef.current.volume = vol
   }, [])
 
-  const nextStation = useCallback(() => {
+  /* One cycle for the D-pad and for headset buttons; the ref keeps the current
+     index rather than a render-time copy, so a skip always starts from the
+     station actually playing. */
+  const skipStation = useCallback((step) => {
     const len = stations.length
-    if (len === 0 || currentStationIndex === null) return
-    const nextIndex = (currentStationIndex + 1) % len
-    selectStation(nextIndex)
-  }, [currentStationIndex, selectStation])
+    if (len === 0) return
+    selectStation((currentIndexRef.current + step + len) % len)
+  }, [selectStation])
 
-  const prevStation = useCallback(() => {
-    const len = stations.length
-    if (len === 0 || currentStationIndex === null) return
-    const prevIndex = (currentStationIndex - 1 + len) % len
-    selectStation(prevIndex)
-  }, [currentStationIndex, selectStation])
+  const nextStation = useCallback(() => skipStation(1), [skipStation])
+  const prevStation = useCallback(() => skipStation(-1), [skipStation])
 
   return {
     audioRef,

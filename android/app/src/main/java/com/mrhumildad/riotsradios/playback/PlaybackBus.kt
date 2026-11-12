@@ -12,18 +12,19 @@ import java.util.concurrent.CopyOnWriteArrayList
  * `state` event correct while the activity is gone.
  */
 object PlaybackBus {
-    data class Snapshot(val state: String, val error: String?)
+    /** `mediaId` is the player's item when one is loaded, null when idle. */
+    data class Snapshot(val state: String, val error: String?, val mediaId: String?)
 
     @Volatile
-    private var current = Snapshot("idle", null)
+    private var current = Snapshot("idle", null, null)
 
     private val listeners = CopyOnWriteArrayList<(Snapshot) -> Unit>()
 
     val snapshot: Snapshot
         get() = current
 
-    fun publish(state: String, error: String?) {
-        val next = Snapshot(state, error)
+    fun publish(state: String, error: String?, mediaId: String?) {
+        val next = Snapshot(state, error, mediaId)
         if (next == current) return
         current = next
         for (listener in listeners) {
@@ -39,5 +40,5 @@ object PlaybackBus {
         listeners.remove(listener)
     }
 
-    fun reset() = publish("idle", null)
+    fun reset() = publish("idle", null, null)
 }

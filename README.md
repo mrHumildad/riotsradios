@@ -9,6 +9,7 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 - Station list with live playback controls
 - Real audio spectrum where the station allows CORS, with a clearly labelled `SIM` fallback otherwise
 - Large-screen / Android TV layout (safe areas, two columns, D-pad focus)
+- Android app: wired and Bluetooth headset next/previous buttons switch stations
 
 ## Keyboard & Remote Controls (Android TV / TV browsers)
 
