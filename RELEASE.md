@@ -3,6 +3,17 @@
 Copy-paste "What's new" text, newest first. CHANGELOG.md is the technical log;
 this file is only what listeners read.
 
+## v1.5.0 — 2026-11-12
+
+**en-US**
+
+```
+- New: the EPG button now cycles between the channel list, the two-hour guide and the newest posts from every station
+- New: a station's info opens its news log with the posts published on that feed
+- New: when a newer release is available, the app offers the update
+- New: the next/previous buttons on wired or Bluetooth headphones change station
+```
+
 ## v1.4.0 — 2026-11-10
 
 **en-US**
