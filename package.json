@@ -10,6 +10,7 @@
     "prebuild": "npm run validate:stations && npm run catalog:check",
     "build": "vite build",
     "preview": "vite preview",
+    "metallicss:lab": "node scripts/metallicss-lab.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "validate:epg": "node scripts/validate-epgs.js",
@@ -44,6 +45,7 @@
   "license": "ISC",
   "dependencies": {
     "@capacitor/core": "^8.6.0",
+    "metallicss": "^4.0.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },

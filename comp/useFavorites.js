@@ -3,9 +3,9 @@ import { FAVORITES_KEY, createFavoritesStore } from '../lib/favoritesStore.js'
 
 /** One favourites store for the whole app.
 
-    The station row's flame and the station modal's toggle both read these ids,
-    so the two indicators can never disagree. State lives here rather than in a
-    component: the modal unmounts on close, favourites must not. */
+    The station row's flame is the only favourite toggle, so every row and the
+    order it feeds read the same ids. State lives here rather than in a
+    component: rows unmount as the list scrolls, favourites must not. */
 export function useFavorites() {
   const [store] = useState(() => createFavoritesStore())
   const [ids, setIds] = useState(() => store.read())

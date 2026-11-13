@@ -16,8 +16,8 @@ Free Community Radio Player — a web-based radio tuner for independent and non 
 - ← → : previous / next station
 - ↑ ↓ : volume ±5%
 - Enter / OK / DPAD center : play / stop (stream)
-- Esc / Back : close EPG modal
-- E / Option / Menu / Info button : open EPG for current station
+- Esc / Back : leave station info back to the previous list view
+- E / Option / Menu / Info button : open / close station info for the current station
 - MediaPlayPause / MediaStop keys also supported (toggle start/stop of the live stream)
 - Stopping the stream fully terminates the connection to prevent background data usage
 Works in any browser; designed for D-pad remotes on Android TV, Fire TV, etc.

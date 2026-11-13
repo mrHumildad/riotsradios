@@ -6,7 +6,7 @@ import MarqueeText from './MarqueeText'
 /* Brand mark shown when a station has no artwork or its icon URL is dead. */
 import fallbackIcon from '/logob_transp_ffc107.png'
 
-function StationItem({ station, index, isActive, isSelected, playState, isFavorite, onSelect, currentShow, nowTitle, onOpenStation, onEditStation, epgMode = false, epg = null, now = null }) {
+function StationItem({ station, index, isActive, isSelected, playState, isFavorite, onToggleFavorite, onSelect, currentShow, nowTitle, onOpenStation, epgMode = false, epg = null, now = null }) {
   const [cycleStep, setCycleStep] = useState(0)
   /* The icon is a remote image. A dead URL hides it, and editing the URL must be
      able to bring it back — so the failure is component state that resets when
@@ -117,10 +117,22 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
         }
       }}
     >
-      <span
+      {/* The flame is the favourite toggle itself: tapping it marks the
+          station without also selecting the row. */}
+      <button
+        type="button"
         className={`station-fav${isFavorite ? ' is-fav' : ''}`}
-        title={isFavorite ? 'Favourite station' : 'Not a favourite'}
-        aria-hidden="true"
+        onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(station.id) }}
+        onKeyDown={(e) => {
+          /* Enter/Space must not also reach the row, which would start the
+             station as well as toggle the flame. */
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') e.stopPropagation()
+        }}
+        aria-pressed={Boolean(isFavorite)}
+        aria-label={isFavorite
+          ? `Remove ${station.name || 'station'} from favourites`
+          : `Add ${station.name || 'station'} to favourites`}
+        title={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path
@@ -128,7 +140,7 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
             d="M12 2.5c2.9 3.3 5 6.3 5 9.4a5 5 0 0 1-10 0c0-2.2 1-3.9 2.3-5.3.3 1.2.9 2 1.8 2.5.3-2.4.7-4.9.9-6.6Z"
           />
         </svg>
-      </span>
+      </button>
 
       {guide ? (
         <div className="station-epg">
@@ -201,16 +213,6 @@ function StationItem({ station, index, isActive, isSelected, playState, isFavori
           </div>
 
           <div className="station-aside">
-            {import.meta.env.DEV && onEditStation && (
-              <button
-                className="station-edit-trigger"
-                onClick={(e) => { e.stopPropagation(); onEditStation(station._line) }}
-                aria-label={`Edit ${station.name || 'station'} in stations.csv`}
-                title="Edit this station's catalog row"
-              >
-                EDIT
-              </button>
-            )}
             <button
               className="station-info-btn"
               onClick={(e) => { e.stopPropagation(); onOpenStation(station) }}

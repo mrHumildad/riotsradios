@@ -56,7 +56,8 @@ Take three, in this order of usefulness:
 
 1. Player with a station playing — amber CRT display, spectrum live.
 2. Station list, several stations visible.
-3. The guide (EPG) modal open.
+3. Station info open in the list panel — the station's header, guide and NEWS
+   key in the column where the rows sit (no dialog on top of the app).
 
 ```bash
 # If you capture on a phone and need 1260x2520, resize without distorting:

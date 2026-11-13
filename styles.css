@@ -165,12 +165,7 @@ body::after {
 .chassis-header {
   height: clamp(3.4rem, 10dvh, 5rem);
   flex: 0 0 auto;
-  background: linear-gradient(
-    170deg,
-    #161411 0%,
-    #0f0e0a 45%,
-    #0a0907 100%
-  );
+  background: linear-gradient(170deg, #0e0d0b 0%, #080706 45%, #030303 100%);
   width: 100%;
   border: 1px solid var(--border-warm);
   border-top: 0.25rem solid var(--amber-dim);
@@ -568,14 +563,20 @@ body::after {
     #0c0b09 100%
   );
   border: 1px solid var(--border-warm);
-  padding: clamp(0.55rem, 1.8dvh, 1rem) clamp(0.55rem, 3.4vw, 0.95rem);
+  /* The plate's own spacing, also read by .crt-display: the glass is inset to
+     the same width as the soundbar and carries a bottom margin that restores
+     the top gap, so the display sits evenly between the chassis rails. */
+  --dash-pad-x: clamp(0.55rem, 3.4vw, 0.95rem);
+  --dash-pad-y: clamp(0.55rem, 1.8dvh, 1rem);
+  --dash-gap: clamp(0.15rem, 0.7dvh, 0.35rem);
+  padding: var(--dash-pad-y) var(--dash-pad-x);
   box-shadow:
     0 10px 36px rgba(0,0,0,.9),
     inset 0 1px 0 rgba(255,255,255,.03),
     inset 0 -1px 0 rgba(0,0,0,.6);
   display: flex;
   flex-direction: column;
-  gap: clamp(0.15rem, 0.7dvh, 0.35rem);
+  gap: var(--dash-gap);
   position: relative;
 }
 
@@ -585,10 +586,18 @@ body::after {
 .crt-display {
   flex: 0 0 auto;
   min-height: 2.6rem;
-  background: var(--vu-bg);
+  /* Grey phosphor glass: a lit upper edge falling to near-black, the way a
+     tube face reads under its own bezel, rather than a flat black plate. */
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.10) 0%, transparent 58%),
+    linear-gradient(180deg, #3b3c38 0%, #2a2b27 26%, #1c1d1a 58%, #121311 82%, #0b0c0a 100%);
   border: 2px solid #3a2000;
-  border-radius: 4px;
-  padding: 0 clamp(0.5rem, 3vw, 0.9rem);
+  /* Inset like the soundbar below it, so the two read as the same unit and the
+     glass closes on all four sides. The flex gap already sits under the glass,
+     so the bottom margin only tops that gap up to the plate's top padding. */
+  border-radius: 0;
+  margin: 0 0 calc(var(--dash-pad-y) - var(--dash-gap));
+  padding: 0 clamp(0.3rem, 1.6vw, 0.55rem);
   display: flex;
   align-items: center;
   position: relative;
@@ -841,21 +850,6 @@ body::after {
   white-space: nowrap;
 }
 
-.soundbar-scale {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  z-index: 5;
-  padding: 0 0.15rem;
-}
-
-.scale-tick {
-  font-size: 0.5rem;
-  letter-spacing: .1em;
-  color: #8a6420;
-  font-weight: 400;
-}
-
 /* ── the bars grid ── */
 .soundbar-canvas {
   width: 100%;
@@ -944,21 +938,6 @@ body::after {
   100% { filter: brightness(1.3); }
 }
 
-/* ── frequency labels ── */
-.soundbar-footer {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  z-index: 5;
-  padding: 0 0.15rem;
-}
-
-.freq-band {
-  font-size: 0.5rem;
-  letter-spacing: .1em;
-  color: #8a6420;
-  font-weight: 400;
-}
 
 /* ---------- SINGLE CONTROL ROW (play + stop + volume) ---------- */
 .ctrl-row {
@@ -971,9 +950,47 @@ body::after {
   min-width: 0;
 }
 
+/* Left cluster: the transport keys, then the fader — the two read as one
+   group, with the view keys set apart on the other side of the hairline. */
 .ctrl-left {
-  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
   min-width: 0;
+}
+
+/* Right cluster: the language key and the list-mode key, held together and
+   split from the transport + volume block by an engraved hairline. */
+.ctrl-right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-left: clamp(0.35rem, 2.4vw, 1.1rem);
+  padding-left: clamp(0.5rem, 2.4vw, 1.15rem);
+}
+
+.ctrl-right::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6%;
+  bottom: 6%;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--amber-dim) 18%,
+    var(--amber-dim) 82%,
+    transparent 100%
+  );
+  opacity: .55;
+  box-shadow: 1px 0 0 rgba(0,0,0,.75);
+  pointer-events: none;
 }
 
 /*** Physical push-button controls — cassette-deck keys ***/
@@ -1062,6 +1079,64 @@ body::after {
   padding: 0 0.35rem;
 }
 
+/* Station-list mode key: same deck-key size as prev/next. Each view owns a
+   colour — amber for the station rows (the base key), green for the guide and
+   blue for the feed — so the key tells you which view is on without a caption
+   and no state ever falls back to a grey button. */
+.push-btn.mode-btn {
+  flex: 0 0 auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.push-btn.mode-btn.is-guide {
+  color: #02150c;
+  background: linear-gradient(to bottom, #20ff80 0%, var(--green-active) 50%, #00964c 100%);
+  box-shadow:
+    0 5px 0 #005530,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+}
+
+.push-btn.mode-btn.is-feed {
+  color: #031018;
+  background: linear-gradient(to bottom, #5fd8ff 0%, #1f9fd0 50%, #0b5f80 100%);
+  box-shadow:
+    0 5px 0 #063b50,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+}
+
+/* Language key: same deck key, its own red so it never reads as a mode. The
+   face carries the active two-letter code, or * while every language shows,
+   set as large as the key can hold — this one is read, not just recognised. */
+.push-btn.lang-btn {
+  flex: 0 0 auto;
+  font-family: var(--font-stencil);
+  font-size: clamp(0.78rem, 3.6dvh, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  color: #2a0600;
+  background: linear-gradient(to bottom, #ff7a5c 0%, #e0341c 50%, #8f1103 100%);
+  box-shadow:
+    0 5px 0 #5e0a02,
+    0 8px 10px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+}
+
+/* The any-language marker is one asterisk, and at the key's own type size the
+   glyph reads as a dot. The slot scales it up and drops it onto the baseline
+   the two-letter codes sit on, so both faces have the same visual weight. */
+.lang-btn .lang-btn-code.is-all {
+  font-size: 1.6em;
+  line-height: 0.75;
+  transform: translateY(0.1em);
+}
+
 /* Play / Stop button — green when stopped (play), red when playing (stop) */
 .push-btn.play-btn {
   background: linear-gradient(
@@ -1101,89 +1176,136 @@ body::after {
   pointer-events: none;
 }
 
-/* ---------- VOLUME RAIL (embedded in ctrl-row) ---------- */
+/* ---------- VOLUME FADER (old-stereo lever in the ctrl-row)
+   An engraved steel plate holding a recessed slot and a brushed-metal lever
+   cap, sat beside the deck keys at their height so the row reads as one unit. */
 .vol-rail {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: clamp(0.3rem, 1vw, 0.45rem);
+  /* It may give ground first, but never past the lever cap's own width —
+     a squeezed rail would let the cap ride over the transport keys. */
   flex: 0 1 auto;
-  width: clamp(6.5rem, 30%, 12rem);
-  max-width: 38%;
+  width: clamp(6.8rem, 40%, 12.5rem);
+  max-width: 44%;
+  min-width: clamp(3.1rem, 14vw, 5rem);
+  height: clamp(2.4rem, 8.5dvh, 3.1rem);
+  background: linear-gradient(to bottom, #2b2620 0%, #17150f 45%, #0a0908 100%);
+  border: 1px solid #000;
+  border-top-color: #3d372e;
+  border-radius: 3px;
+  padding: 0 clamp(0.45rem, 1.6vw, 0.7rem);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.9),
+    0 3px 0 #000,
+    0 5px 9px rgba(0,0,0,.55);
+}
+
+.fader {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
   min-width: 0;
-  min-height: 2.75rem;
-  background: var(--vu-bg);
-  border: 1px solid var(--border-warm);
-  border-radius: 4px;
-  padding: 0 clamp(0.4rem, 1.6vw, 0.65rem);
-  box-shadow: inset 0 2px 6px rgba(0,0,0,.75);
 }
 
-.vol-icon {
-  flex-shrink: 0;
-  font-size: 0.88rem;
-  color: var(--amber-dim);
-  line-height: 1;
-}
-
-.vol-pct {
-  flex-shrink: 0;
-  font-family: var(--font-stencil);
-  font-size: 0.62rem;
-  min-width: 32px;
-  text-align: right;
-  color: var(--amber-dim);
-  letter-spacing: .05em;
-}
-
-input[type="range"] {
-  flex: 1;
-  height: clamp(0.18rem, 0.5dvh, 0.4rem);
+/* The machined slot: a recessed channel with a scale engraved in the steel. */
+.fader input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  background: var(--vu-bg);
-  border: 1px solid var(--border-warm);
-  border-radius: 3px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: clamp(0.64rem, 1.9dvh, 0.8rem);
+  margin: 0;
+  border: 2px solid #000;
+  border-radius: 2px;
+  background-color: #0a0908;
+  background-image:
+    repeating-linear-gradient(to right, rgba(232,160,0,.55) 0 2px, transparent 2px 12.5%),
+    linear-gradient(to bottom, #050403 0%, #2b2520 45%, #090807 100%);
+  background-size: 100% 4px, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  box-shadow:
+    inset 0 3px 5px rgba(0,0,0,.95),
+    0 1px 0 rgba(255,255,255,.09);
+  cursor: pointer;
   outline: none;
-  cursor: pointer;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,.8);
 }
 
-input[type="range"]::-webkit-slider-thumb {
+/* The lever itself: brushed steel cap, knurled grip, amber index line. */
+.fader input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: clamp(1.4rem, 4.2dvh, 1.95rem);
-  height: clamp(1.4rem, 4.2dvh, 1.95rem);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    var(--amber-bright) 0%,
-    var(--amber)        60%,
-    #7a5000           100%
-  );
-  border: 2px solid var(--amber-dim);
-  box-shadow: 0 0 8px var(--amber-glow), 0 2px 6px rgba(0,0,0,.7);
-  cursor: pointer;
+  appearance: none;
+  width: clamp(1.15rem, 3.4dvh, 1.55rem);
+  height: clamp(1.6rem, 5dvh, 2.25rem);
+  border: 2px solid #050403;
+  border-radius: 2px;
+  background-color: #8b8272;
+  background-image:
+    linear-gradient(to right, transparent 0 40%, var(--amber-bright) 40% 60%, transparent 60% 100%),
+    repeating-linear-gradient(to bottom, rgba(0,0,0,.6) 0 2px, rgba(255,255,255,.24) 2px 3px, transparent 3px 6px),
+    linear-gradient(to right, #1c1813 0%, #6d6558 12%, #e3dccd 34%, #fffcf2 46%, #cabfa9 60%, #8b8272 80%, #2e2922 100%);
+  background-size: 100% 100%, 60% 66%, 100% 100%;
+  background-position: center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  box-shadow:
+    0 3px 7px rgba(0,0,0,.9),
+    0 0 8px rgba(255,193,7,.22),
+    inset 0 2px 0 rgba(255,255,255,.55);
+  cursor: grab;
 }
 
-input[type="range"]::-moz-range-thumb {
-  width: clamp(1.4rem, 4.5dvh, 1.75rem);
-  height: clamp(1.4rem, 4.5dvh, 1.75rem);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    var(--amber-bright) 0%,
-    var(--amber)        60%,
-    #7a5000           100%
-  );
-  border: 2px solid var(--amber-dim);
-  box-shadow: 0 0 8px var(--amber-glow), 0 2px 6px rgba(0,0,0,.7);
-  cursor: pointer;
+.fader input[type="range"]::-moz-range-thumb {
+  width: clamp(1.15rem, 3.4dvh, 1.55rem);
+  height: clamp(1.6rem, 5dvh, 2.25rem);
+  border: 2px solid #050403;
+  border-radius: 2px;
+  background-color: #8b8272;
+  background-image:
+    linear-gradient(to right, transparent 0 40%, var(--amber-bright) 40% 60%, transparent 60% 100%),
+    repeating-linear-gradient(to bottom, rgba(0,0,0,.6) 0 2px, rgba(255,255,255,.24) 2px 3px, transparent 3px 6px),
+    linear-gradient(to right, #1c1813 0%, #6d6558 12%, #e3dccd 34%, #fffcf2 46%, #cabfa9 60%, #8b8272 80%, #2e2922 100%);
+  background-size: 100% 100%, 60% 66%, 100% 100%;
+  background-position: center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  box-shadow:
+    0 3px 7px rgba(0,0,0,.9),
+    0 0 8px rgba(255,193,7,.22),
+    inset 0 2px 0 rgba(255,255,255,.55);
+  cursor: grab;
 }
 
-/* Remove default Firefox track styling inconsistencies */
-input[type="range"]::-moz-range-track {
-  background: var(--vu-bg);
-  border: 1px solid var(--border-warm);
-  border-radius: 3px;
+.fader input[type="range"]:active::-webkit-slider-thumb,
+.fader input[type="range"]:active::-moz-range-thumb {
+  cursor: grabbing;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.9),
+    0 0 10px rgba(255,193,7,.45),
+    inset 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* Firefox draws its own track below the slot; keep it out of the way. */
+.fader input[type="range"]::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+.fader input[type="range"]:focus-visible {
+  outline: 2px solid var(--amber-bright);
+  outline-offset: 3px;
+}
+
+.vol-rail:focus-within {
+  border-top-color: var(--amber-dim);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -1px 0 rgba(0,0,0,.9),
+    0 3px 0 #000,
+    0 0 10px rgba(255,193,7,.35),
+    0 5px 9px rgba(0,0,0,.55);
 }
 
 /* ---------- Panel Divider Lines ---------- */
@@ -1203,81 +1325,6 @@ input[type="range"]::-moz-range-track {
 /* =========================================================
    SECTION 3 — STATION LIST  ("channel list")
    ========================================================= */
-
-/* header bar above list: two compact toggles, no title text */
-.station-section-label {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.35rem, 1.8vw, 0.55rem);
-  min-width: 0;
-  padding: 0.5rem 0 0.4rem;
-}
-
-.station-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .45em;
-  font-family: var(--font-stencil);
-  font-size: clamp(0.55rem, 1.25dvh, 0.62rem);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  line-height: 1.6;
-  color: var(--warm-gray);
-  background: transparent;
-  border: 1px solid var(--border-warm);
-  border-radius: 2px;
-  padding: 3px 10px;
-  cursor: pointer;
-  flex: 0 0 auto;
-  white-space: nowrap;
-  transition: color .12s ease, border-color .12s ease, background .12s ease;
-}
-
-/* The LANG button keeps one width across ALL and the language codes, so
-   cycling never nudges the EPG toggle. */
-.station-filter-btn:first-child {
-  min-width: 5.6rem;
-}
-
-.station-filter-key {
-  color: var(--warm-gray);
-  opacity: .75;
-}
-
-.station-filter-value {
-  color: inherit;
-  font-weight: 700;
-}
-
-.station-filter-btn:hover:not(:disabled) {
-  color: var(--amber);
-  border-color: var(--amber-dim);
-}
-
-.station-filter-btn.is-on {
-  color: var(--amber);
-  border-color: var(--amber);
-  background: rgba(232, 160, 0, 0.08);
-}
-
-.station-filter-btn.is-on .station-filter-key {
-  color: var(--amber-dim);
-  opacity: 1;
-}
-
-.station-filter-btn:focus-visible {
-  outline: 1px solid var(--amber);
-  outline-offset: 2px;
-}
-
-.station-filter-btn:disabled {
-  opacity: .45;
-  cursor: default;
-}
 
 .station-list-wrapper {
   flex: 1 1 auto;
@@ -1316,6 +1363,187 @@ input[type="range"]::-moz-range-track {
 }
 .station-list-inner::-webkit-scrollbar-thumb:hover {
   background: var(--amber);
+}
+
+/* ---------- MODE CHANGE: PLATE SHIFT ----------
+   The mode key changes which panel the list is showing. It moves like a hinged
+   steel plate rather than a slide: the view swings in on a real perspective,
+   hinged on the edge it belongs to — station rows drop from the top rail, the
+   guide lanes swing out of the left jamb, the feed out of the right — and it
+   lands hard, with no bounce, the way a heavy latch does.
+
+   The animation-name is what changes with the view, and a changed name is what
+   restarts the animation on the element that stays mounted; one shared
+   animation would simply keep running. */
+.station-list-wrapper {
+  position: relative;
+  perspective: 55rem;
+  perspective-origin: 50% 35%;
+}
+
+.station-list-inner {
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+  animation: plate-drop-rows .58s cubic-bezier(.12,.88,.18,1) both;
+}
+
+.station-list-inner[data-view="epg"] {
+  transform-origin: 0 50%;
+  animation-name: plate-swing-guide;
+}
+
+.station-list-inner[data-view="news"] {
+  transform-origin: 100% 50%;
+  animation-name: plate-swing-feed;
+}
+
+/* Station info is a mode too: the panel itself becomes the station's page, so
+   it swings up out of the bottom rail like a plate tipped out of the chassis.
+   It does not scroll as a whole — its own guide body does. */
+.station-list-inner[data-view="station"] {
+  transform-origin: 50% 100%;
+  animation-name: plate-rise-info;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+@keyframes plate-drop-rows {
+  from {
+    opacity: 0;
+    transform: translate3d(0, .9rem, -3rem) rotateX(-28deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes plate-swing-guide {
+  from {
+    opacity: 0;
+    transform: translate3d(-1.2rem, 0, -3rem) rotateY(38deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes plate-swing-feed {
+  from {
+    opacity: 0;
+    transform: translate3d(1.2rem, 0, -3rem) rotateY(-38deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes plate-rise-info {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -1rem, -3rem) rotateX(28deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The shutter: a brushed-steel band with one lit edge and a hard shadow
+   behind it, swept across the panel as it lands. The element is keyed on the
+   view (comp/StationList.jsx), so it is rebuilt for every change and its
+   sweep always plays — no state to clear afterwards. */
+.list-shift {
+  --shift-angle: 100deg;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: linear-gradient(
+    var(--shift-angle),
+    transparent 0 24%,
+    rgba(232,160,0,.07) 34%,
+    rgba(255,255,255,.14) 44%,
+    rgba(255,255,255,.30) 47%,
+    rgba(0,0,0,.55) 49%,
+    rgba(0,0,0,.72) 53%,
+    rgba(232,160,0,.10) 63%,
+    transparent 78% 100%
+  );
+  animation-duration: .6s;
+  animation-timing-function: cubic-bezier(.15,.85,.2,1);
+  animation-fill-mode: both;
+  animation-name: shutter-down;
+}
+
+.list-shift-guide {
+  --shift-angle: 100deg;
+  animation-name: shutter-right;
+}
+
+.list-shift-feed {
+  --shift-angle: 80deg;
+  animation-name: shutter-left;
+}
+
+.list-shift-panel {
+  --shift-angle: 90deg;
+  animation-name: shutter-up;
+}
+
+@keyframes shutter-down {
+  from { opacity: 0; transform: translate3d(0, -110%, 0); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { opacity: 0; transform: translate3d(0, 110%, 0); }
+}
+
+@keyframes shutter-right {
+  from { opacity: 0; transform: translate3d(-110%, 0, 0); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { opacity: 0; transform: translate3d(110%, 0, 0); }
+}
+
+@keyframes shutter-left {
+  from { opacity: 0; transform: translate3d(110%, 0, 0); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { opacity: 0; transform: translate3d(-110%, 0, 0); }
+}
+
+@keyframes shutter-up {
+  from { opacity: 0; transform: translate3d(0, 110%, 0); }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { opacity: 0; transform: translate3d(0, -110%, 0); }
+}
+
+/* The key's face is a split-flap: the new glyph falls forward into the new
+   colour (the icon is keyed on the view in comp/PlayerDashboard.jsx). */
+.push-btn.mode-btn svg {
+  animation: mode-key-flip .46s cubic-bezier(.2,.85,.25,1) both;
+}
+
+@keyframes mode-key-flip {
+  from {
+    opacity: 0;
+    transform: perspective(120px) rotateX(-74deg) translateY(-.12rem) scale(.94);
+  }
+  65% { opacity: 1; }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station-list-inner,
+  .list-shift,
+  .push-btn.mode-btn svg { animation: none; }
+  .list-shift { display: none; }
 }
 
 /**** STATION ITEM — the "rear channel row" ****/
@@ -1514,6 +1742,9 @@ input[type="range"]::-moz-range-track {
 .station-icon {
   width: clamp(2.1rem, 6.4dvh, 3rem);
   height: clamp(2.1rem, 6.4dvh, 3rem);
+  /* A banner-shaped station logo is letterboxed in the square slot instead of
+     being stretched to fill it; square artwork is unaffected. */
+  object-fit: contain;
   border-radius: 3px;
   border: 1px solid var(--border-warm);
   flex-shrink: 0;
@@ -1536,17 +1767,33 @@ input[type="range"]::-moz-range-track {
     0 0 10px rgba(232,160,0,.18);
 }
 
-/* Favourite marker — a flame that is red outline while the station is not a
-   favourite, and red filled once it is. The fav feature itself is not built
-   yet, so every row currently renders the outline. */
-/* Sits in the left slot the channel number used to occupy. */
+/* Favourite key — the flame is the row's own favourite toggle: red outline
+   while the station is not a favourite, red filled once it is. It sits in the
+   left slot the channel number used to occupy, so it is a bare key: no plate,
+   no border, just the flame and its glow. */
 .station-fav {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  padding: 0;
+  margin: 0;
   color: var(--red-live);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: filter .2s ease;
+}
+
+.station-fav:hover {
+  filter: drop-shadow(0 0 6px rgba(255,46,46,.5));
+}
+
+.station-fav:focus-visible {
+  outline: 2px solid var(--red-live);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .station-fav svg {
@@ -1930,36 +2177,24 @@ input[type="range"]::-moz-range-track {
 }
 
 /* =========================================================
-   SECTION 5b — STATION MODAL (guide + homepage)
+   SECTION 5b — STATION PANEL (info view: guide + homepage)
+   Station info used to float above the app as a dialog. It is a mode of the
+   station list now, so it takes the list column's place and height instead.
    ========================================================= */
 
-.station-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.85);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem;
-}
-
-.station-modal {
+.station-panel {
+  flex: 1 1 auto;
+  min-height: 0;
   background: var(--panel-dark);
   border: 1px solid var(--border-warm);
-  width: 100%;
-  max-width: 30rem;
-  max-height: 80dvh;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.9),
-    inset 0 1px 0 rgba(255,255,255,.03);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
   position: relative;
   overflow: hidden;
 }
 
-.station-modal-header {
+.station-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1968,22 +2203,24 @@ input[type="range"]::-moz-range-track {
   flex-shrink: 0;
 }
 
-.station-modal-station {
+.station-panel-station {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
 }
 
-.station-modal-icon {
+.station-panel-icon {
   width: 1.6rem;
   height: 1.6rem;
+  /* Same square slot as the row icon, so it letterboxes the same way. */
+  object-fit: contain;
   border-radius: 3px;
   border: 1px solid var(--border-warm);
   flex-shrink: 0;
 }
 
-.station-modal-name {
+.station-panel-name {
   font-family: var(--font-stencil);
   font-size: 0.8rem;
   font-weight: 700;
@@ -1994,9 +2231,16 @@ input[type="range"]::-moz-range-track {
   text-overflow: ellipsis;
 }
 
+/* The close key is shared with the development catalog editor, which is still
+   a real dialog. */
+.station-panel-close,
 .station-modal-close {
   font-family: var(--font-stencil);
-  font-size: 1rem;
+  /* The ✕ is a key face of its own: bold and as large as the key holds, so it
+     reads as a target rather than as a stray mark. */
+  font-size: clamp(1rem, 2.6dvh, 1.15rem);
+  font-weight: 700;
+  line-height: 1;
   color: var(--red-live);
   background: transparent;
   border: 1px solid var(--red-dim);
@@ -2010,32 +2254,33 @@ input[type="range"]::-moz-range-track {
   transition: color .12s ease, border-color .12s ease;
 }
 
+.station-panel-close:hover,
 .station-modal-close:hover {
   color: var(--red-live);
   border-color: var(--red-live);
   background: rgba(255,46,46,.14);
 }
 
-/* Header actions: news log, favourite, homepage link, then close. */
-.station-modal-actions {
+/* Header actions: news log, homepage link, then close. */
+.station-panel-actions {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   flex-shrink: 0;
 }
 
-/* News log toggle: swaps the guide for the station's published posts. Outlined
-   on the guide, filled while the log is shown. */
-.station-modal-news {
-  font-family: var(--font-stencil);
-  font-size: 0.5rem;
-  font-weight: 700;
-  letter-spacing: .09em;
+/* News log toggle: swaps the guide for the station's published posts. It wears
+   the feed's own glyph — the same mark the mode key shows for this view — in
+   the same square key as the homepage and close buttons beside it, so the
+   header reads as three keys of one size instead of a caption squeezed between
+   two icons. Outlined on the guide, filled while the log is shown. */
+.station-panel-news {
   color: var(--amber);
   background: transparent;
   border: 1px solid var(--border-warm);
+  width: clamp(1.75rem, 6dvh, 2.25rem);
   height: clamp(1.75rem, 6dvh, 2.25rem);
-  padding: 0 0.35rem;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2044,66 +2289,24 @@ input[type="range"]::-moz-range-track {
   transition: color .12s ease, background .12s ease, border-color .12s ease;
 }
 
-.station-modal-news:hover,
-.station-modal-news:focus-visible,
-.station-modal-news.is-active {
+/* Drawn at most of the key's face: at the panel's own size the glyph has to be
+   read across a room, not squinted at. */
+.station-panel-news > svg {
+  width: 70%;
+  height: 70%;
+}
+
+.station-panel-news:hover,
+.station-panel-news:focus-visible,
+.station-panel-news.is-active {
   color: var(--panel-dark);
   background: var(--amber);
   border-color: var(--amber);
 }
 
-/* Favourite toggle, left of the homepage link: same flame as the station row,
-   outlined when off and filled when on. */
-.station-modal-fav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: clamp(1.75rem, 6dvh, 2.25rem);
-  height: clamp(1.75rem, 6dvh, 2.25rem);
-  padding: 0;
-  color: var(--red-live);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: filter .16s ease;
-}
-
-.station-modal-fav svg {
-  width: 62%;
-  height: 62%;
-  display: block;
-}
-
-.station-modal-fav .flame-body {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: fill .16s ease;
-}
-
-.station-modal-fav.is-fav {
-  filter: drop-shadow(0 0 5px rgba(255,46,46,.65));
-}
-
-.station-modal-fav.is-fav .flame-body {
-  fill: currentColor;
-}
-
-.station-modal-fav:hover {
-  filter: drop-shadow(0 0 6px rgba(255,46,46,.5));
-}
-
-.station-modal-fav:focus-visible {
-  outline: 2px solid var(--red-live);
-  outline-offset: 2px;
-}
-
 /* Homepage link, as a home icon beside the close button — the modal is the
    row's only info control, so the station's own site is reachable from here. */
-.station-modal-home-btn {
+.station-panel-home-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2116,22 +2319,25 @@ input[type="range"]::-moz-range-track {
   transition: color .12s ease, border-color .12s ease;
 }
 
-.station-modal-home-btn svg {
-  width: 62%;
-  height: 62%;
+.station-panel-home-btn svg {
+  /* Drawn larger and a touch heavier than the row marks: the roof and door
+     read as two lines at this size, and the web icon is a key face, not body
+     copy. */
+  width: 70%;
+  height: 70%;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.station-modal-home-btn:hover {
+.station-panel-home-btn:hover {
   color: #04121f;
   background: var(--info-blue);
 }
 
-.station-modal-day-nav {
+.station-panel-day-nav {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2195,6 +2401,49 @@ input[type="range"]::-moz-range-track {
 
 .epg-today-btn:hover {
   color: var(--amber);
+}
+
+/* Day steps in the station guide. The channel list's mode changes hinge whole
+   plates (comp/StationList.jsx); a day is a page inside one guide, so it moves
+   differently instead of copying them: the schedule slides in from the side
+   you asked for, TODAY drops it in from below, and the frame around it — the
+   panel header and the day nav — stays put. comp/StationPanel.jsx keys the
+   element on the day offset, so every step replays its entrance. */
+.epg-schedule.epg-day-step-next {
+  animation: epg-day-step-next .34s cubic-bezier(.16,.85,.2,1) both;
+}
+
+.epg-schedule.epg-day-step-prev {
+  animation: epg-day-step-prev .34s cubic-bezier(.16,.85,.2,1) both;
+}
+
+.epg-schedule.epg-day-step-today {
+  animation: epg-day-step-today .34s cubic-bezier(.16,.85,.2,1) both;
+}
+
+@keyframes epg-day-step-next {
+  from { opacity: 0; transform: translate3d(1.35rem, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes epg-day-step-prev {
+  from { opacity: 0; transform: translate3d(-1.35rem, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes epg-day-step-today {
+  from { opacity: 0; transform: translate3d(0, .9rem, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Same specificity as the step rules above: a bare `.epg-schedule` here would
+   lose to `.epg-schedule.epg-day-step-*` and the motion would keep playing. */
+@media (prefers-reduced-motion: reduce) {
+  .epg-schedule.epg-day-step-next,
+  .epg-schedule.epg-day-step-prev,
+  .epg-schedule.epg-day-step-today {
+    animation: none;
+  }
 }
 
 .epg-schedule {
@@ -2404,7 +2653,7 @@ input[type="range"]::-moz-range-track {
 }
 
 /* Reader mode: the main list carries the same news classes as the station
-   modal, so both logs read the same. The only addition is the station icon. */
+   panel, so both logs read the same. The only addition is the station icon. */
 .station-list-inner.station-news {
   padding: 0.25rem 0.5rem 0.4rem;
 }
@@ -2480,7 +2729,13 @@ input[type="range"]::-moz-range-track {
              max(0.65rem, env(safe-area-inset-bottom))
              max(0.7rem, env(safe-area-inset-left));
   }
-  .player-dashboard { padding: 0.7rem 0.8rem; }
+  /* The padding lives in the two tokens so .crt-display's bottom margin keeps
+     matching the space the top padding gives it at this breakpoint. */
+  .player-dashboard {
+    --dash-pad-x: 0.8rem;
+    --dash-pad-y: 0.7rem;
+    padding: var(--dash-pad-y) var(--dash-pad-x);
+  }
   .station-name-line { font-size: 0.88rem; }
 }
 
@@ -2520,12 +2775,26 @@ input[type="range"]::-moz-range-track {
   .footer-sig { font-size: 0.62rem; }
 }
 
+/* Narrow phones: the row stays on one line, so the keys tighten and the two
+   clusters drop their separator spacing rather than letting the fader — and
+   its lever cap — run into the transport keys. */
+@media (max-width: 430px) {
+  .ctrl-row                     { gap: 0.3rem; }
+  .transport-btns               { gap: 0.25rem; }
+  .push-btn                     { min-width: 2.1rem; min-height: 2.1rem; padding: 0 0.2rem; }
+  .push-btn.skip-btn            { min-width: 1.6rem; min-height: 1.6rem; }
+  .push-btn.lang-btn            { font-size: 0.72rem; }
+  .vol-rail                     { flex: 1 1 auto; padding: 0 0.32rem; min-width: 3.2rem; }
+  .ctrl-right                   { gap: 0.25rem; margin-left: 0.3rem; padding-left: 0.42rem; }
+}
+
 /* Height-cap breakpoints — prevent overflow on short mobile viewports */
 @media (max-height: 520px) {
   .player-dashboard             { height: clamp(8.5rem, 40dvh, 14rem); }
   .chassis-footer               { font-size: 0.6rem; padding: 0.25rem 0.75rem; }
   .ctrl-row                     { gap: 0.35rem; }
   .push-btn                     { min-width: clamp(1.75rem, 10dvh, 2.4rem); min-height: clamp(1.75rem, 10dvh, 2.4rem); }
+  .vol-rail                     { height: clamp(2.1rem, 9dvh, 2.6rem); }
 }
 
 @media (max-height: 400px) {
@@ -2652,25 +2921,121 @@ input[type="range"]::-moz-range-track {
   #root { max-width: 85rem; }
 
   .container {
+    /* Two columns: the header, player and footer stack in the first — exactly
+       as wide as the player plate — while the channel list owns the full
+       height of the second. .main-columns is still the wrapper the two plates
+       are written into, so it steps out of the way with display: contents and
+       this grid places them instead. */
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(24rem, 1fr);
+    /* header / player / update notice / footer. The notice row collapses to
+       nothing while no update is waiting, so the stack stays flush. */
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    column-gap: 0;
+    row-gap: 0;
     padding-top: max(16px, env(safe-area-inset-top));
     padding-bottom: max(28px, env(safe-area-inset-bottom));
     padding-left: max(clamp(24px, 3vw, 64px), env(safe-area-inset-left));
     padding-right: max(clamp(24px, 3vw, 64px), env(safe-area-inset-right));
   }
 
-  .main-columns {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(24rem, 0.8fr);
-    gap: clamp(1.25rem, 2vw, 2.75rem);
-    flex: 1 1 auto;
+  .container > * { min-width: 0; }
+
+  .main-columns { display: contents; }
+
+  /* The left stack Fills the whole chassis height: the player takes whatever
+     the header and footer leave, so the left column is 100% tall. */
+  .chassis-header { grid-column: 1; grid-row: 1; }
+  .player-dashboard {
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
     min-height: 0;
-    align-items: stretch;
+    min-width: 0;
+  }
+  .update-notice { grid-column: 1; grid-row: 3; }
+  .chassis-footer { grid-column: 1; grid-row: 4; }
+
+  /* The list is the tall plate: it runs beside the stacked left column for the
+     whole chassis height instead of stopping under the header rail. It stops
+     a little short of the top and bottom rails, so the header and footer read
+     as the frame the plate is recessed between rather than as strips glued to
+     its edges. */
+  .station-list-wrapper {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin-block: clamp(0.3rem, 0.8dvh, 0.5rem);
   }
 
-  .main-columns > * { min-width: 0; }
-  .main-columns > .player-dashboard { min-height: 0; height: auto; }
+  /* One inset for every view of the list — the rows, the guide lanes, the
+     feed and a station's own info plate all start the same distance inside
+     the frame, so changing view does not change the gutter. Only the content
+     animates between views (plate-drop / swing / rise); the inset is fixed. */
+  .station-list-wrapper { --list-inset: clamp(0.5rem, 1.2dvh, 0.8rem); }
 
-  .station-list-wrapper { flex: 1 1 auto; min-height: 0; }
+  .station-list-inner,
+  .station-list-inner.station-news,
+  .station-list-inner[data-view="station"] {
+    padding: var(--list-inset);
+  }
+
+  /* The guide lanes and the feed rows were flat plates laid over the metal
+     canvas, so those two views lost the finish the row list keeps — there was
+     nothing of the plate to show through. Both now carry one translucent steel
+     insert: a lit top edge over a dark bottom one, with the plate's own metal
+     reading through the middle, the same way the rows and the station panel
+     read as parts of the same machined chassis. */
+  .epg-lane {
+    background-color: rgba(8, 8, 7, .55);
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .06) 0%,
+      rgba(255, 255, 255, 0) 45%,
+      rgba(0, 0, 0, .30) 100%
+    );
+    border-color: var(--border-warm);
+    box-shadow:
+      inset 0 2px 6px rgba(0, 0, 0, .70),
+      inset 0 1px 0 rgba(255, 255, 255, .07);
+  }
+
+  .station-news-post,
+  .station-news-post:last-child {
+    background-color: rgba(8, 8, 7, .55);
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .055) 0%,
+      rgba(255, 255, 255, 0) 45%,
+      rgba(0, 0, 0, .30) 100%
+    );
+    border: 1px solid var(--border-warm);
+    border-radius: 2px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .06),
+      inset 0 -1px 0 rgba(0, 0, 0, .80);
+  }
+
+  /* A station's own page is the same insert one size up: its plate carried an
+     opaque --panel-dark body, which hid the list's finish behind it. Same
+     translucent steel, same lit top edge and dark bottom edge. Its header and
+     day nav stay flat inside it, so the page reads as a recessed sheet. */
+  .station-panel {
+    background-color: rgba(8, 8, 7, .55);
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .055) 0%,
+      rgba(255, 255, 255, 0) 45%,
+      rgba(0, 0, 0, .30) 100%
+    );
+    border: 1px solid var(--border-warm);
+    border-radius: 2px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .06),
+      inset 0 -1px 0 rgba(0, 0, 0, .80);
+  }
   .station-list-inner { flex: 1 1 auto; }
 
   .station-item { min-height: 3.9rem; }
@@ -2683,9 +3048,8 @@ input[type="range"]::-moz-range-track {
 
 @media (min-width: 1920px) {
   #root { max-width: 105rem; }
-  .main-columns {
-    grid-template-columns: minmax(0, 1.3fr) minmax(29rem, 0.7fr);
-    gap: 3rem;
+  .container {
+    grid-template-columns: minmax(0, 1.15fr) minmax(30rem, 1fr);
   }
   .station-item { min-height: 4.6rem; }
   .station-name-line { font-size: 1.18rem; }
@@ -2703,28 +3067,6 @@ input[type="range"]::-moz-range-track {
 /* =========================================================
    SECTION 5c — STATION EDITOR (development only)
    ========================================================= */
-
-/* EDIT pill in station-aside — dev builds only */
-.station-edit-trigger {
-  font-family: var(--font-stencil);
-  font-size: 0.57rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--cyan-dim);
-  background: transparent;
-  border: 1px solid var(--cyan-dim);
-  padding: 2px 8px;
-  border-radius: 2px;
-  cursor: pointer;
-  flex-shrink: 0;
-  line-height: 1.6;
-  transition: color .12s ease, border-color .12s ease;
-}
-
-.station-edit-trigger:hover {
-  color: var(--cyan);
-  border-color: var(--cyan);
-}
 
 .station-edit-overlay {
   position: fixed;
@@ -2935,31 +3277,7 @@ input[type="range"]::-moz-range-track {
 .station-edit-status.bad { color: var(--crimson); }
 
 @media (max-width: 640px) {
-  .station-edit-trigger { font-size: 0.5rem; padding: 1px 6px; }
   .station-edit-body { padding: 12px; }
-}
-
-/* + NEW station button in the channel header */
-
-.station-add-btn {
-  font-family: var(--font-stencil);
-  font-size: 0.55rem;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--cyan-dim);
-  background: transparent;
-  border: 1px solid var(--cyan-dim);
-  border-radius: 2px;
-  padding: 2px 8px;
-  cursor: pointer;
-  flex: 0 0 auto;
-  line-height: 1.6;
-  transition: color .12s ease, border-color .12s ease;
-}
-
-.station-add-btn:hover {
-  color: var(--cyan);
-  border-color: var(--cyan);
 }
 
 /* DELETE action in the station editor footer */
@@ -3118,4 +3436,73 @@ input[type="range"]::-moz-range-track {
   background: var(--amber-bright);
   border-color: var(--amber-bright);
   color: #0a0907;
+}
+
+/* =========================================================
+   SECTION — METALLIC SURFACES (metallicss@4.0.3)
+   =========================================================
+   The package paints a canvas behind the element's content. 4.0.3 reads only
+   --metal and --convexity; the angle/intensity/resolution controls in the lab
+   belong to 5.0.0 and are ignored by the pinned release.
+
+   isolation:isolate is load-bearing. The generated canvas sits at z-index:-1,
+   and without a stacking context here it would paint behind this element's own
+   opaque plate and never be seen.
+
+   The canvas is kept translucent so the dark plate still reads through it and
+   the amber type keeps its contrast whatever the material's brightness. */
+.metal-surface {
+  /* The generated canvas is absolutely positioned, so every surface has to be
+     its containing block, and the bevel must not spill past the plate edge. */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.metal-surface > canvas.metal {
+  pointer-events: none;
+  opacity: 0.28;
+  /* Pulls any material tint towards neutral and down towards the black plate,
+     so no finish can turn the surface green or lift it above the text. */
+  filter: brightness(0.5) saturate(0.35);
+}
+
+/* Dark steel on both plates: the gold finish read as olive once it was laid
+   over the warm black, so the tint is gone and the canvas is darkened and
+   desaturated below. */
+.player-dashboard.metal-surface {
+  --metal: lead;
+  --convexity: 3;
+}
+
+.station-list-wrapper.metal-surface {
+  --metal: lead;
+  --convexity: 2;
+}
+
+/* Header and footer are chassis plates too, with a shallower bevel so the
+   frame reads behind the player and the list rather than beside them. */
+.chassis-header.metal-surface,
+.chassis-footer.metal-surface {
+  --metal: lead;
+  --convexity: 2;
+}
+
+/* The header keeps the least finish of the four plates: at the shared opacity
+   the canvas lifted the bar above the chassis black, so it is dimmed here and
+   the strip stays darker than the player it frames. */
+.chassis-header.metal-surface > canvas.metal {
+  opacity: 0.16;
+}
+
+/* In the two-column layout the list is a tall plate beside the player, so it
+   carries the player's own finish: the same bevel depth and the same inset
+   metal frame. This sits after the shared surface rules on purpose — the
+   plate's base --convexity is declared above and would win by order. The
+   stacked layout keeps the list borderless and flush for phone readability. */
+@media (min-width: 1200px) {
+  .station-list-wrapper.metal-surface {
+    --convexity: 3;
+    border: 1px solid var(--border-warm);
+  }
 }

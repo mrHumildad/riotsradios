@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useSpectrum } from './useSpectrum.js'
+import { useMetalSurface } from './useMetalSurface.js'
 import MarqueeText from './MarqueeText'
+import ViewIcon from './ViewIcon'
 
 /* ─────────────────────────────────────────────────
    PlayerDashboard
@@ -10,12 +12,18 @@ function PlayerDashboard({
   codec, bitrate, timeZone, countryCode,
   volume, currentShow, currentTrack, stationHasError, streamError, spectrumRef,
   onTogglePlay, onChangeVolume, onPrevStation, onNextStation,
+  listView, hasGuides, hasStationPanel, onCycleListView,
+  language, hasLanguages, onCycleLanguage, languageLabel, nextLanguageLabel,
 }) {
   const isIdle    = currentStationIndex === null
   const hasError  = stationHasError || Boolean(streamError)
+  /* The chassis plate is one metallic surface; --metal/--convexity live in CSS. */
+  const surfaceRef = useRef(null)
+  useMetalSurface(surfaceRef)
   /* Only animate while audio is actually live; otherwise the canvas freezes. */
   const isLive    = playbackState === 'playing' && !hasError
   const isActive  = playbackState === 'loading' || playbackState === 'playing' || playbackState === 'stalled'
+  const volumePct = Math.round(Math.min(1, Math.max(0, Number(volume) || 0)) * 100)
 
   const { canvasRef, mode: spectrumMode } = useSpectrum({
     spectrumRef,
@@ -109,8 +117,28 @@ function PlayerDashboard({
 
   const displayClass = streamError ? 'display-text stream-error' : 'display-text'
 
+  /* The list-mode key: one icon per view, the icon showing what the station
+     list is doing now. Its label names the current view and the next one, so
+     the key never needs a text caption. */
+  const view = listView || 'list'
+  const viewLabel = view === 'epg'
+    ? 'guide lanes'
+    : view === 'news' ? 'station feed' : view === 'station' ? 'station info' : 'station rows'
+  /* The key walks rows → lanes → feed → info. A catalog with no guide skips the
+     lanes, and the info step only exists once there is a station to show, so
+     the label names exactly the view the key will land on next. */
+  const nextViewLabel = view === 'station'
+    ? 'station rows'
+    : hasStationPanel
+      ? (view === 'list'
+          ? (hasGuides ? 'guide lanes' : 'station feed')
+          : view === 'epg' ? 'station feed' : 'station info')
+      : hasGuides
+        ? (view === 'epg' ? 'station feed' : view === 'news' ? 'station rows' : 'guide lanes')
+        : (view === 'news' ? 'station rows' : 'station feed')
+
   return (
-    <div className="player-dashboard">
+    <div className="player-dashboard metal-surface" ref={surfaceRef}>
 
 
       <div className="crt-display" aria-label="Current station">
@@ -142,23 +170,8 @@ function PlayerDashboard({
             </span>
           )}
         </div>
-        <div className="soundbar-scale">
-          <span className="scale-tick">+6</span>
-          <span className="scale-tick">0</span>
-          <span className="scale-tick">-6</span>
-          <span className="scale-tick">-12</span>
-          <span className="scale-tick">-20</span>
-        </div>
         <div className={`soundbar-bars${isLive ? ' is-active' : ''}`}>
           <canvas ref={canvasRef} className="soundbar-canvas" aria-hidden="true" />
-        </div>
-        <div className="soundbar-footer">
-          <span className="freq-band">20</span>
-          <span className="freq-band">50</span>
-          <span className="freq-band">200</span>
-          <span className="freq-band">1K</span>
-          <span className="freq-band">5K</span>
-          <span className="freq-band">20K</span>
         </div>
       </div>
 
@@ -211,13 +224,52 @@ function PlayerDashboard({
         </div>
 
         <div className="vol-rail">
-          <input
-            type="range"
-            min="0" max="1" step="0.05"
-            value={volume}
-            onChange={e => onChangeVolume(e.target.value)}
-            aria-label="Volume"
-          />
+          <div className="fader">
+            <input
+              type="range"
+              min="0" max="1" step="0.05"
+              value={volume}
+              onChange={e => onChangeVolume(e.target.value)}
+              aria-label="Volume"
+              aria-valuetext={`${volumePct}%`}
+            />
+          </div>
+        </div>
+
+        {/* The two view keys stand apart from the transport keys and the fader,
+            so the row reads as "transport + volume" then "language + mode". */}
+        <div className="ctrl-right">
+
+          <button
+            type="button"
+            id="lang-btn"
+            className="push-btn skip-btn lang-btn"
+            onClick={onCycleLanguage}
+            disabled={!hasLanguages}
+            aria-label={`Language: ${languageLabel}. Click for ${nextLanguageLabel}.`}
+            title={`Showing ${languageLabel} — click for ${nextLanguageLabel}`}
+          >
+            <span
+              className={`lang-btn-code${language ? '' : ' is-all'}`}
+              aria-hidden="true"
+            >
+              {language ? language.toUpperCase() : '*'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            id="list-mode-btn"
+            className={`push-btn skip-btn mode-btn${view === 'epg' ? ' is-guide' : view === 'news' ? ' is-feed' : view === 'station' ? ' is-info' : ''}`}
+            onClick={onCycleListView}
+            aria-label={`Mode: ${viewLabel}. Click for ${nextViewLabel}.`}
+            title={`Showing ${viewLabel} — click for ${nextViewLabel}`}
+          >
+            {/* Keyed on the view: the icon is redrawn on every mode change,
+                which is what replays its entrance. */}
+            <ViewIcon key={view} view={view} />
+          </button>
+
         </div>
 
       </div>

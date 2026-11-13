@@ -59,7 +59,8 @@ function draw(canvas, levels, peaks) {
  *
  * - Real FFT data when the station exposes CORS (`canAnalyze` and the graph is
  *   connected), otherwise the deterministic SIM pattern.
- * - Freezes when audio is not actually live; stops the rAF loop in hidden tabs.
+ * - Drains to all-zero bars when audio is not live or the fader is at 0;
+ *   stops the rAF loop in hidden tabs.
  * - Honours `prefers-reduced-motion` by drawing one static frame.
  *
  * @param {object} options
@@ -77,6 +78,10 @@ export function useSpectrum({ spectrumRef, canAnalyze, isLive, stationIndex, vol
   const peaksRef = useRef(new Float32Array(BAND_COUNT))
   const volumeRef = useRef(volume)
   const seedRef = useRef((stationIndex + 1) * 0.31)
+  /* The analyser taps the stream before the gain node, so the real FFT levels
+     ignore the fader; only the SIM pattern scales by volume. Both are muted
+     here so a fader at 0 always empties the bars. */
+  const muted = !(Number(volume) > 0)
 
   useEffect(() => {
     volumeRef.current = volume
@@ -95,15 +100,36 @@ export function useSpectrum({ spectrumRef, canAnalyze, isLive, stationIndex, vol
       setMode(next)
     }
 
-    if (!isLive) {
-      setModeIfChanged('idle')
-      return undefined
-    }
-
     const reducedMotion =
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (!isLive || muted) {
+      setModeIfChanged('idle')
+      /* Stopped, stalled or in error, or the fader is down: run the bars to
+         zero instead of leaving the last live frame on screen. Reduced motion
+         snaps straight down. */
+      let fallRaf = null
+      const step = reducedMotion ? 1 : 0.14
+      const fall = () => {
+        fallRaf = null
+        const levels = levelsRef.current
+        const peaks = peaksRef.current
+        let moving = false
+        for (let i = 0; i < BAND_COUNT; i++) {
+          levels[i] = Math.max(0, levels[i] - step)
+          peaks[i] = Math.max(0, peaks[i] - step)
+          if (levels[i] > 0 || peaks[i] > 0) moving = true
+        }
+        draw(canvasRef.current, levels, peaks)
+        if (moving) fallRaf = requestAnimationFrame(fall)
+      }
+      fall()
+      return () => {
+        if (fallRaf !== null) cancelAnimationFrame(fallRaf)
+      }
+    }
 
     if (reducedMotion) {
       const staticLevels = new Float32Array(BAND_COUNT).fill(0.35)
@@ -179,7 +205,7 @@ export function useSpectrum({ spectrumRef, canAnalyze, isLive, stationIndex, vol
       if (raf !== null) cancelAnimationFrame(raf)
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [isLive, canAnalyze, spectrumRef])
+  }, [isLive, muted, canAnalyze, spectrumRef])
 
   return { canvasRef, mode }
 }

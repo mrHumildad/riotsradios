@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import StationItem from './StationItem'
+import StationPanel from './StationPanel'
+import { useMetalSurface } from './useMetalSurface.js'
 import { orderStations } from '../lib/stationOrder.js'
-import { catalogLanguages, languageName, stationLanguage } from '../lib/stationLanguage.js'
+import { stationLanguage } from '../lib/stationLanguage.js'
 import { loadLatestPosts } from '../lib/stationFeeds.js'
 import { stationPlace } from '../lib/stations.js'
 import fallbackIcon from '/logob_transp_ffc107.png'
@@ -35,34 +37,26 @@ function FeedIcon({ src, label }) {
   )
 }
 
-function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, playbackState, onSelectStation, currentShows, trackTitles, onOpenStation, onEditStation, onAddStation, epgByStation }) {
+function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, playbackState, onSelectStation, currentShows, trackTitles, onOpenStation, epgByStation, view, activeLanguage, panelStation, onClosePanel, isFavorite, onToggleFavorite, getDaySchedule, onFeedLanguages }) {
   const listRef = useRef(null)
+  /* The list plate is the second metallic surface; --metal/--convexity in CSS. */
+  const plateRef = useRef(null)
+  useMetalSurface(plateRef)
   const favoriteSet = useMemo(() => new Set(favoriteIds || []), [favoriteIds])
 
-  /* The LANG toggle steps through ALL and every language the catalog carries,
-     starting with the browser's own match. A guide's own `language` counts here
-     too — that is how Catalan and Basque stations are told apart. */
-  const languages = useMemo(() => {
-    const nav = typeof navigator === 'undefined' ? null : navigator
-    const browserLanguages = nav ? (nav.languages?.length ? nav.languages : [nav.language]) : []
-    return catalogLanguages(stations, browserLanguages, epgByStation)
-  }, [stations, epgByStation])
-  const [languageStep, setLanguageStep] = useState(0)
+  /* The language filter is stepped by the LANG key in the player's control row,
+     so App owns it and hands the active code down; empty means ALL. A guide's
+     own `language` counts here too — that is how Catalan and Basque stations
+     are told apart. */
 
-  /* The EPG button rotates the list through three views: the station rows, the
-     two-hour guide lanes, and the merged station feed. The lane is anchored on
-     the wall clock, so it advances on its own timer even when no stream title
-     changes. */
-  const [view, setView] = useState('list')
-  const hasGuides = Boolean(epgByStation?.size)
+  /* The view is owned by App — the mode button that cycles it sits in the
+     player's control row. The lane is anchored on the wall clock, so it
+     advances on its own timer even when no stream title changes. */
   const epgMode = view === 'epg'
   const readerMode = view === 'news'
-  const cycleView = () => {
-    /* A catalog with no guide skips the lane step rather than showing a view
-       that looks exactly like the station rows. */
-    const cycle = hasGuides ? ['list', 'epg', 'news'] : ['list', 'news']
-    setView((current) => cycle[(cycle.indexOf(current) + 1) % cycle.length])
-  }
+  /* Station info is a view of this panel too, so it renders in the list's own
+     place and takes the same plate-and-shutter entrance as the other modes. */
+  const stationMode = view === 'station' && Boolean(panelStation)
   const [epgNow, setEpgNow] = useState(() => new Date())
 
   /* Reader mode: the newest posts from every station feed, capped at 100. It is
@@ -77,9 +71,6 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
     for (const station of stations) map.set(String(station.id), station)
     return map
   }, [stations])
-  const stepCount = languages.length + 1
-  const languageIndex = languageStep % stepCount
-  const activeLanguage = languageIndex > 0 ? languages[languageIndex - 1] : ''
   const languageFiltered = Boolean(activeLanguage)
 
   /* Favourites float to the top, newest first; the rest keep catalog order.
@@ -133,6 +124,23 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
     })
   }, [feed.posts, languageFiltered, activeLanguage, stationById, epgByStation])
 
+  /* Every language the loaded feed publishes in, ignoring the active filter:
+     App drops the rest from the LANG cycle while this view is open. */
+  const feedLanguages = useMemo(() => {
+    const codes = new Set()
+    for (const post of feed.posts) {
+      const station = stationById.get(String(post.station_id))
+      if (!station) continue
+      const code = stationLanguage(station, epgByStation?.get?.(station.id))
+      if (code) codes.add(code)
+    }
+    return codes
+  }, [feed.posts, stationById, epgByStation])
+
+  useEffect(() => {
+    onFeedLanguages?.(feedLanguages)
+  }, [feedLanguages, onFeedLanguages])
+
   useEffect(() => {
     if (readerMode) listRef.current?.scrollTo({ top: 0 })
   }, [readerMode])
@@ -168,59 +176,32 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
   }, [currentStationIndex, displayed])
 
   return (
-    <div className="station-list-wrapper">
-      <div className="station-section-label">
-        <button
-          type="button"
-          className={`station-filter-btn${languageFiltered ? ' is-on' : ''}`}
-          onClick={() => setLanguageStep(step => (step + 1) % stepCount)}
-          disabled={languages.length === 0}
-          aria-label={languageFiltered
-            ? `Language: ${languageName(activeLanguage)}. Click for the next language.`
-            : `Language: all. Click to filter to ${languageName(languages[0])}.`}
-          title={languageFiltered
-            ? `Showing ${languageName(activeLanguage)} stations — click for the next language`
-            : 'Showing all languages — click to filter'}
-        >
-          <span className="station-filter-key" aria-hidden="true">LANG</span>
-          <span className="station-filter-value">
-            {languageFiltered ? activeLanguage.toUpperCase() : 'ALL'}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={`station-filter-btn${view !== 'list' ? ' is-on' : ''}`}
-          onClick={cycleView}
-          aria-pressed={view !== 'list'}
-          aria-label={readerMode
-            ? 'Showing the station news feed. Click for the station rows.'
-            : epgMode
-              ? 'Showing guide lanes. Click for the station news feed.'
-              : `Showing station rows. Click for ${hasGuides ? 'guide lanes' : 'the station news feed'}.`}
-          title={readerMode
-            ? 'Showing the station news feed — click to return to the station rows'
-            : epgMode
-              ? 'Showing two-hour guide lanes — click for the station news feed'
-              : hasGuides
-                ? 'Showing station rows — click to show the two-hour guide lanes'
-                : 'Showing station rows — click for the station news feed'}
-        >
-          {readerMode ? 'FEED' : 'EPG'}
-        </button>
-        {import.meta.env.DEV && onAddStation && (
-          <button
-            type="button"
-            className="station-add-btn"
-            onClick={onAddStation}
-            aria-label="Add a station to stations.csv"
-            title="Add a station to stations.csv"
-          >
-            + NEW
-          </button>
-        )}
-      </div>
-      <div className={`station-list-inner${readerMode ? ' station-news' : ''}`} ref={listRef}>
-        {readerMode ? (
+    <div className="station-list-wrapper metal-surface" ref={plateRef}>
+      {/* The list carries no header of its own: the language and mode keys both
+          live in the player's control row. */}
+      {/* `data-view` selects the entrance animation, so a mode change is seen
+          as well as read: the CSS restarts it because the animation-name
+          changes with the view. */}
+      {/* Keyed on the view so the steel sweep is rebuilt for every change and
+          always plays; it clears itself when the animation ends. */}
+      <span
+        key={view || 'list'}
+        className={`list-shift${view === 'epg' ? ' list-shift-guide' : view === 'news' ? ' list-shift-feed' : view === 'station' ? ' list-shift-panel' : ''}`}
+        aria-hidden="true"
+      />
+      <div
+        className={`station-list-inner${readerMode ? ' station-news' : ''}`}
+        data-view={view || 'list'}
+        ref={listRef}
+      >
+        {stationMode ? (
+          <StationPanel
+            station={panelStation}
+            epg={epgByStation?.get?.(panelStation.id) || null}
+            getDaySchedule={getDaySchedule}
+            onClose={onClosePanel}
+          />
+        ) : readerMode ? (
           <>
             {feed.status === 'loading' && (
               <div className="epg-no-data">Loading news…</div>
@@ -275,11 +256,11 @@ function StationList({ stations, favoriteIds, currentStationIndex, isPlaying, pl
           isSelected={currentStationIndex === index}
           playState={currentStationIndex === index ? playbackState : null}
           isFavorite={favoriteSet.has(station.id)}
+          onToggleFavorite={onToggleFavorite}
           onSelect={onSelectStation}
           currentShow={currentShows.get(station.id) || null}
           nowTitle={trackTitles?.[station.id] || ''}
           onOpenStation={onOpenStation}
-          onEditStation={onEditStation}
           epgMode={epgMode}
           epg={epgByStation?.get?.(station.id) || null}
           now={epgNow}
