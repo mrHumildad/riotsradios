@@ -1,5 +1,14 @@
 # riotsradios
 
+## 2.1.0
+
+### Minor Changes
+
+- - Station info opens in the station list column instead of a dialog over the app, so the guide, the station's website and its news log render where the rows sit; ✕, Esc or the info key returns to the view you came from.
+  - Every station gets an info button, including one without a guide, which now shows its header, website and news log.
+  - The player's header, footer and plates carry a metallic finish, and the control row gains a mode key that cycles the list through rows, the guide and the merged station feed, plus the station info view.
+  - The language filter moves from a button above the list into the player's control row.
+
 ## 2.0.0
 
 ### Major Changes
